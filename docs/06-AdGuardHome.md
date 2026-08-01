@@ -6,16 +6,16 @@ O AdGuard Home será executado em modo `host` para usar DNS, DHCP e identificar 
 
 - IP estático do Wyse configurado;
 - Unbound instalado e respondendo em `127.0.0.1:5335`;
-- porta 53 livre no host;
+- endereço `192.168.100.10:53` disponível;
 - DHCP do modem ainda ativo durante os testes iniciais.
 
-## Verificar porta 53
+## Verificar a porta 53
 
 ```bash
 sudo ss -lntup | grep ':53 '
 ```
 
-Em Ubuntu Server, o `systemd-resolved` pode usar um stub local em `127.0.0.53`, que não costuma impedir o AdGuard de escutar no IP da LAN. Se houver conflito em `0.0.0.0:53`, investigue antes de continuar.
+O Ubuntu pode manter o stub do `systemd-resolved` em `127.0.0.53:53`. Para evitar conflito, configure o AdGuard para escutar DNS **somente no IP Ethernet do servidor**, `192.168.100.10`, e não em `0.0.0.0`/todas as interfaces.
 
 ## Subir o container
 
@@ -36,8 +36,10 @@ Use:
 
 - interface administrativa: `192.168.100.10`;
 - porta administrativa final: `80` ou outra porta livre;
-- servidor DNS: todas as interfaces, porta `53`;
+- servidor DNS: `192.168.100.10`, porta `53`;
 - usuário e senha exclusivos.
+
+Não selecione todas as interfaces para o DNS, pois isso pode disputar a porta do stub local do Ubuntu.
 
 Após concluir, o painel normalmente ficará em:
 
@@ -62,7 +64,7 @@ Bootstrap DNS pode permanecer vazio quando o upstream é um endereço IP local.
 No próprio servidor:
 
 ```bash
-dig @127.0.0.1 google.com
+dig @127.0.0.1 -p 5335 google.com
 dig @192.168.100.10 google.com
 ```
 
@@ -110,6 +112,8 @@ docker logs --tail 100 adguardhome
 sudo ss -lntup | grep -E ':53 |:80 |:3000 '
 dig @192.168.100.10 cloudflare.com
 ```
+
+O resultado de `ss` deve mostrar o DNS em `192.168.100.10:53`, não em `0.0.0.0:53`.
 
 - [ ] painel acessível somente na LAN;
 - [ ] consultas aparecem no Query Log;
