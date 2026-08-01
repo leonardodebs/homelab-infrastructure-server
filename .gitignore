@@ -1,0 +1,6 @@
+compose/.env
+backups/
+*.tar.gz
+*.log
+.DS_Store
+Thumbs.db
