@@ -1,0 +1,23 @@
+# Segredos e dados voláteis
+/etc/homelab-backup/restic-password
+/proc
+/sys
+/dev
+/run
+/tmp
+/var/tmp
+/var/cache
+
+# Dados recriáveis do Docker; somente os volumes nomeados são salvos
+/var/lib/docker/overlay2
+/var/lib/docker/containers
+/var/lib/docker/image
+/var/lib/docker/buildkit
+
+# Evita recursão no próprio destino do backup
+/srv/backup
+
+# Arquivos temporários e logs sem valor de restauração
+*.tmp
+*.swp
+*.log
