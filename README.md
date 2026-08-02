@@ -12,7 +12,8 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 - gerenciamento de containers pelo Portainer;
 - monitoramento pelo Uptime Kuma;
 - verificação controlada de atualizações com Watchtower;
-- firewall, backups e manutenção documentada.
+- firewall, backups e manutenção documentada;
+- recuperação local por HD externo com Restic.
 
 ## Hardware do projeto
 
@@ -21,12 +22,13 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 | Equipamento | Dell Wyse N03D / 3290 |
 | CPU | Intel Celeron N2807 |
 | RAM | 4 GB DDR3 |
-| Armazenamento | SSD mSATA 16 GB |
+| Armazenamento de produção | SSD mSATA 16 GB |
+| Armazenamento de backup | HD externo Seagate 1 TB via USB |
 | Rede principal | Ethernet |
 | Recursos extras | HDMI e Wi-Fi |
 | Sistema | Ubuntu Server 24.04 LTS amd64 |
 
-> O SSD de 16 GB é suficiente para a primeira versão, mas exige controle de logs e backups externos. O upgrade futuro recomendado é mSATA de 120 ou 240 GB.
+> O SSD interno mantém somente o sistema e os serviços ativos. O HD externo é exclusivo para snapshots, verificações e testes de restauração do HomeLab.
 
 ## Endereçamento adotado
 
@@ -48,10 +50,14 @@ flowchart TD
     Modem --> Wyse[Dell Wyse\nUbuntu Server\n192.168.100.10]
     Wyse --> AGH[AdGuard Home\nDNS + DHCP]
     AGH --> Unbound[Unbound\n127.0.0.1:5335]
-    Unbound --> Root[DNS Root/Autoritativos]
+    Unbound --> RootDNS[DNS Root/Autoritativos]
     Wyse --> Portainer
     Wyse --> Kuma[Uptime Kuma]
     Wyse --> Watchtower
+    Wyse --> SSD[SSD 16 GB\nProdução]
+    Wyse --> USB[HD Seagate 1 TB\n/srv/backup]
+    USB --> Restic[Restic\nSnapshots criptografados]
+    Restic --> Restore[Testes de restauração]
     Modem --> Clientes[Notebooks, celulares, TVs e demais clientes]
     Clientes --> AGH
 ```
@@ -64,6 +70,9 @@ flowchart TD
 4. O Unbound roda como serviço nativo do Ubuntu em `127.0.0.1:5335`.
 5. O Watchtower não atualiza automaticamente o DNS/DHCP. Serviços críticos são atualizados manualmente após backup.
 6. Portas administrativas ficam disponíveis somente na rede local e nenhuma porta deve ser encaminhada no modem para a Internet.
+7. O SSD de 16 GB é o ambiente de produção; o HD externo de 1 TB é o ambiente de recuperação.
+8. O backup é cancelado se `/srv/backup` não estiver montado, evitando gravar acidentalmente no SSD interno.
+9. A senha Restic não é armazenada no repositório e precisa ser guardada fora do servidor.
 
 ## Ordem de implantação
 
@@ -83,6 +92,22 @@ flowchart TD
 14. [Manutenção](docs/13-Manutencao.md)
 15. [Troubleshooting](docs/14-Troubleshooting.md)
 16. [Upgrades futuros](docs/15-Upgrade.md)
+17. [HD externo e stack Restic](docs/16-HD-Externo-Backup.md)
+
+## Stack de backup externo
+
+| Rotina | Agendamento | Resultado |
+|---|---:|---|
+| Backup Restic | diariamente às 03:15 | snapshot criptografado e incremental |
+| Manutenção | domingo às 04:30 | retenção, prune, check parcial e SMART |
+| Restore test | dia 1 às 05:30 | restauração em diretório isolado |
+
+Retenção padrão:
+
+- 7 snapshots diários;
+- 8 semanais;
+- 12 mensais;
+- 2 anuais.
 
 ## Estrutura do repositório
 
@@ -93,17 +118,33 @@ flowchart TD
 │   ├── compose.yaml
 │   └── .env.example
 ├── config/
+│   ├── restic/
+│   │   ├── excludes.txt
+│   │   └── restic.env.example
 │   └── unbound/
 │       └── homelab.conf
 ├── docs/
-└── scripts/
-    ├── bootstrap-host.sh
-    ├── install-docker.sh
-    ├── deploy-stack.sh
-    ├── backup.sh
-    ├── restore.sh
-    ├── update-stack.sh
-    └── healthcheck.sh
+├── scripts/
+│   ├── bootstrap-host.sh
+│   ├── install-docker.sh
+│   ├── deploy-stack.sh
+│   ├── prepare-backup-disk.sh
+│   ├── install-backup-stack.sh
+│   ├── restic-backup.sh
+│   ├── restic-maintenance.sh
+│   ├── restic-restore-test.sh
+│   ├── smart-check.sh
+│   ├── backup.sh
+│   ├── restore.sh
+│   ├── update-stack.sh
+│   └── healthcheck.sh
+└── systemd/
+    ├── homelab-backup.service
+    ├── homelab-backup.timer
+    ├── homelab-backup-maintenance.service
+    ├── homelab-backup-maintenance.timer
+    ├── homelab-restore-test.service
+    └── homelab-restore-test.timer
 ```
 
 ## Uso rápido
@@ -127,6 +168,19 @@ nano compose/.env
 
 Depois instale o Unbound e suba a stack conforme os capítulos 7 e 6.
 
+## Instalação do HD externo
+
+Depois que os serviços estiverem estáveis:
+
+```bash
+lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINT,MODEL,SERIAL,TRAN
+sudo ./scripts/prepare-backup-disk.sh /dev/sdX
+sudo ./scripts/install-backup-stack.sh
+sudo systemctl start homelab-backup.service
+```
+
+O comando de preparação é destrutivo e exige que o disco correto seja identificado pelo modelo, capacidade e serial. Consulte o [capítulo 16](docs/16-HD-Externo-Backup.md) antes de executar.
+
 ## Aviso sobre o corte de DHCP
 
 Nunca desative o DHCP do modem antes de:
@@ -142,8 +196,11 @@ Nunca desative o DHCP do modem antes de:
 - [x] Documentação inicial
 - [x] Compose dos serviços
 - [x] Scripts operacionais
+- [x] Stack de backup externo documentada
+- [x] Timers de backup, manutenção e restore test
 - [ ] Instalação física do Wyse
 - [ ] Testes no hardware real
+- [ ] Formatação e validação do HD externo real
 - [ ] Evidências e capturas de tela
 
 ## Referências oficiais
@@ -156,3 +213,6 @@ Nunca desative o DHCP do modem antes de:
 - Uptime Kuma: https://github.com/louislam/uptime-kuma
 - Watchtower: https://containrrr.dev/watchtower/
 - OISD: https://oisd.nl/setup/adguardhome
+- Restic: https://restic.readthedocs.io/en/stable/
+- systemd.timer: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
+- smartmontools: https://www.smartmontools.org/
