@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 SERVER_IP="${SERVER_IP:-192.168.100.10}"
+BACKUP_MOUNT="${BACKUP_MOUNT:-/srv/backup}"
 
 echo '== Host =='
 hostnamectl --static
@@ -25,3 +26,19 @@ dig +short @"$SERVER_IP" ubuntu.com
 
 echo '== Gateway =='
 ping -c 2 192.168.100.1
+
+echo '== Backup externo =='
+if mountpoint -q "$BACKUP_MOUNT"; then
+  findmnt "$BACKUP_MOUNT"
+  df -h "$BACKUP_MOUNT"
+  if [[ -r "$BACKUP_MOUNT/status/last-success.txt" ]]; then
+    echo '-- Último backup bem-sucedido --'
+    cat "$BACKUP_MOUNT/status/last-success.txt"
+  else
+    echo 'Ainda não há marcador de backup bem-sucedido.'
+  fi
+else
+  echo "ALERTA: $BACKUP_MOUNT não está montado."
+fi
+
+systemctl list-timers 'homelab-*' --no-pager || true
