@@ -1,0 +1,17 @@
+[Unit]
+Description=Retenção, prune, integridade e SMART do backup HomeLab
+Documentation=https://github.com/leonardodebs/homelab-infrastructure-server
+RequiresMountsFor=/srv/backup
+After=homelab-backup.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/homelab-restic-maintenance
+Nice=15
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+PrivateTmp=true
+ProtectHome=read-only
+ProtectSystem=full
+ReadWritePaths=/srv/backup /var/cache/restic-homelab /run/lock
+TimeoutStartSec=6h
