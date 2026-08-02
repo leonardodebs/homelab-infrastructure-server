@@ -1,0 +1,18 @@
+[Unit]
+Description=Backup diário criptografado do HomeLab com Restic
+Documentation=https://github.com/leonardodebs/homelab-infrastructure-server
+RequiresMountsFor=/srv/backup
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/homelab-restic-backup
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+PrivateTmp=true
+ProtectHome=read-only
+ProtectSystem=full
+ReadWritePaths=/srv/backup /var/cache/restic-homelab /var/lib/homelab-backup /var/lib/docker /run/lock
+TimeoutStartSec=2h
