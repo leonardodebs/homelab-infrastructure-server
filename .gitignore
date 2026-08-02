@@ -1,5 +1,10 @@
 compose/.env
+config/restic/restic.env
+config/restic/restic-password
 backups/
+restic/
+restore-tests/
+manual-restore/
 *.tar.gz
 *.log
 .DS_Store
