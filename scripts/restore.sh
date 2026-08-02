@@ -1,34 +1,41 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-if [[ $# -ne 1 ]]; then
-  echo "Uso: $0 /opt/homelab/backups/AAAAMMDD-HHMMSS" >&2
+ENV_FILE="/etc/homelab-backup/restic.env"
+SNAPSHOT="${1:-latest}"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+TARGET="${2:-/srv/backup/manual-restore/$STAMP}"
+
+fail() {
+  echo "ERRO: $*" >&2
   exit 1
-fi
+}
 
-BACKUP_DIR="$1"
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENV_FILE="$ROOT_DIR/compose/.env"
-COMPOSE_FILE="$ROOT_DIR/compose/compose.yaml"
+[[ $EUID -eq 0 ]] || fail "Execute com sudo."
+[[ -r "$ENV_FILE" ]] || fail "Arquivo ausente: $ENV_FILE"
 
-[[ -d "$BACKUP_DIR" ]] || { echo "Backup não encontrado: $BACKUP_DIR" >&2; exit 1; }
+set -a
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+set +a
 
-read -r -p "A restauração substituirá os volumes atuais. Digite RESTAURAR: " CONFIRM
-[[ "$CONFIRM" == "RESTAURAR" ]] || exit 1
+: "${RESTIC_REPOSITORY:?RESTIC_REPOSITORY não definido}"
+: "${RESTIC_PASSWORD_FILE:?RESTIC_PASSWORD_FILE não definido}"
+: "${BACKUP_MOUNT:=/srv/backup}"
 
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" down
+mountpoint -q "$BACKUP_MOUNT" || fail "$BACKUP_MOUNT não está montado."
 
-for volume in portainer_data adguard_work adguard_conf uptime_kuma_data; do
-  archive="$BACKUP_DIR/${volume}.tar.gz"
-  [[ -f "$archive" ]] || { echo "Arquivo ausente: $archive" >&2; exit 1; }
-  docker volume create "homelab_${volume}" >/dev/null
-  docker run --rm \
-    -v "homelab_${volume}:/target" \
-    -v "$BACKUP_DIR:/backup:ro" \
-    alpine:3.20 \
-    sh -c "rm -rf /target/* /target/.[!.]* /target/..?* 2>/dev/null || true; tar xzf /backup/${volume}.tar.gz -C /target"
-done
+HOST_TAG="$(hostname --short)"
+echo "Snapshot: $SNAPSHOT"
+echo "Destino:  $TARGET"
+echo "A restauração será feita em uma pasta separada e não substituirá os dados ativos."
+read -r -p "Digite RESTAURAR $SNAPSHOT para continuar: " CONFIRM
+[[ "$CONFIRM" == "RESTAURAR $SNAPSHOT" ]] || fail "Operação cancelada."
 
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
+mkdir -p "$TARGET"
+restic restore "$SNAPSHOT" --host "$HOST_TAG" --tag homelab --target "$TARGET"
 
-echo "Restauração concluída. Valide os serviços e logs."
+FILE_COUNT="$(find "$TARGET" -type f | wc -l)"
+echo "Restauração concluída em $TARGET"
+echo "Arquivos restaurados: $FILE_COUNT"
+echo "Revise os dados antes de copiar qualquer conteúdo para o ambiente ativo."
