@@ -1,84 +1,114 @@
 # 12 — Backup e restauração
 
-## Escopo do backup
+A estratégia oficial do projeto usa um **HD externo Seagate de 1 TB**, conectado por USB e montado em `/srv/backup`. O disco é exclusivo do HomeLab e não recebe arquivos pessoais dos notebooks.
 
-O script `scripts/backup.sh` salva:
+O passo a passo completo está em:
 
-- arquivos Compose e variáveis de exemplo;
-- configuração do Unbound;
-- Netplan;
-- volume do Portainer;
-- volumes do AdGuard Home;
-- volume do Uptime Kuma;
-- hashes SHA-256 dos arquivos compactados.
+- [16 — HD externo dedicado ao backup](16-HD-Externo-Backup.md)
 
-## Destino
+## Arquitetura
 
 ```text
-/opt/homelab/backups/AAAAMMDD-HHMMSS
+SSD interno de 16 GB
+└── produção: Ubuntu, Docker e serviços
+
+HD externo de 1 TB
+└── recuperação: snapshots Restic, testes e status
 ```
 
-Como o SSD interno é pequeno, copie os backups para outro dispositivo.
+O HD não substitui o SSD para execução dos serviços. AdGuard Home, DHCP, Unbound, Portainer e Uptime Kuma continuam no armazenamento interno para não dependerem do cabo USB durante a inicialização.
+
+## Tecnologia
+
+A stack utiliza:
+
+- **ext4** no HD externo;
+- montagem por UUID em `/srv/backup`;
+- **Restic** para backup criptografado, incremental e deduplicado;
+- **systemd timers** para automação;
+- **smartmontools** para saúde do disco, quando a ponte USB suporta SMART;
+- teste automático de restauração em diretório isolado.
+
+## Escopo protegido
+
+- repositório e arquivos Compose;
+- Netplan, Unbound, Docker e UFW;
+- volumes do Portainer;
+- volumes do AdGuard Home;
+- volume do Uptime Kuma;
+- configurações da rotina de backup, sem incluir a senha Restic.
+
+Não são armazenadas imagens Docker, caches, camadas `overlay2`, logs temporários ou o próprio conteúdo de `/srv/backup`.
+
+## Agendamento
+
+| Rotina | Frequência |
+|---|---|
+| Snapshot | diariamente às 03:15 |
+| Retenção, prune, check parcial e SMART | domingo às 04:30 |
+| Teste de restauração | dia 1 de cada mês às 05:30 |
+
+## Retenção
+
+- 7 diários;
+- 8 semanais;
+- 12 mensais;
+- 2 anuais.
 
 ## Execução manual
 
-```bash
-chmod +x scripts/*.sh
-./scripts/backup.sh
-```
-
-Valide:
+Backup:
 
 ```bash
-sudo find /opt/homelab/backups -maxdepth 2 -type f -ls
-sudo cat /opt/homelab/backups/ULTIMO_BACKUP/SHA256SUMS
+sudo systemctl start homelab-backup.service
+sudo journalctl -u homelab-backup.service -f
 ```
 
-## Copiar para o notebook
-
-No PowerShell:
-
-```powershell
-scp -r leonardo@192.168.100.10:/opt/homelab/backups/AAAAMMDD-HHMMSS .
-```
-
-## Agendamento semanal
+Manutenção:
 
 ```bash
-crontab -e
+sudo systemctl start homelab-backup-maintenance.service
+sudo journalctl -u homelab-backup-maintenance.service --no-pager -n 200
 ```
 
-Adicione:
-
-```cron
-0 3 * * 6 /home/leonardo/homelab-infrastructure-server/scripts/backup.sh >> /var/log/homelab-backup.log 2>&1
-```
-
-## Restauração
-
-A restauração interrompe os containers e substitui seus volumes.
+Teste de restauração:
 
 ```bash
-./scripts/restore.sh /opt/homelab/backups/AAAAMMDD-HHMMSS
+sudo systemctl start homelab-restore-test.service
+sudo journalctl -u homelab-restore-test.service --no-pager -n 100
 ```
 
-Digite `RESTAURAR` quando solicitado.
-
-## Validação após restauração
+Listar snapshots:
 
 ```bash
-docker ps
-./scripts/healthcheck.sh
-docker logs --tail 100 adguardhome
-docker logs --tail 100 portainer
-docker logs --tail 100 uptime-kuma
+sudo bash -c 'source /etc/homelab-backup/restic.env; restic snapshots'
 ```
 
-## Política recomendada
+## Restauração segura
 
-- backup antes de qualquer atualização manual;
-- backup semanal;
-- cópia externa mensal;
-- retenção local de 30 dias;
-- teste de restauração após mudanças importantes;
-- nunca considerar o próprio SSD do Wyse como único local de backup.
+O script restaura em uma pasta separada e não substitui automaticamente o ambiente ativo:
+
+```bash
+sudo ./scripts/restore.sh latest
+```
+
+O destino padrão é:
+
+```text
+/srv/backup/manual-restore/AAAAMMDD-HHMMSS
+```
+
+Depois da inspeção, os arquivos necessários podem ser copiados manualmente para o ambiente de produção.
+
+## Proteções implementadas
+
+- o backup falha quando `/srv/backup` não está montado;
+- duas operações Restic não podem rodar simultaneamente;
+- containers com dados persistentes são pausados brevemente;
+- um `trap` reinicia os containers que estavam ativos, mesmo em caso de erro;
+- a senha não é incluída no próprio repositório;
+- o teste mensal comprova que snapshots podem ser lidos e restaurados.
+
+## Limitação
+
+O HD externo é uma cópia local. Ele não protege contra roubo, incêndio, surto que atinja todos os equipamentos ou falha simultânea. A evolução futura é manter uma segunda cópia criptografada fora do HomeLab.
