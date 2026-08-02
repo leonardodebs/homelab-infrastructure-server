@@ -1,0 +1,12 @@
+[Unit]
+Description=Agenda a manutenção semanal do backup HomeLab
+
+[Timer]
+OnCalendar=Sun *-*-* 04:30:00
+Persistent=true
+RandomizedDelaySec=10m
+AccuracySec=1m
+Unit=homelab-backup-maintenance.service
+
+[Install]
+WantedBy=timers.target
