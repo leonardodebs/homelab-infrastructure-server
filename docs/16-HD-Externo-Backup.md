@@ -5,7 +5,7 @@ Este capítulo adiciona um **HD externo Seagate de 1 TB**, conectado por USB, ex
 ## Arquitetura final
 
 ```text
-SSD interno de 16 GB — produção
+SATA Flash interno de 32 GB — produção
 ├── Ubuntu Server
 ├── Docker e imagens
 ├── AdGuard Home
@@ -19,7 +19,9 @@ HD externo de 1 TB — recuperação
 └── /srv/backup/status
 ```
 
-O sistema e os serviços continuam no SSD interno. O HD externo guarda snapshots criptografados e incrementais do HomeLab.
+O sistema e os serviços continuam no armazenamento interno. O HD externo guarda snapshots criptografados e incrementais do HomeLab.
+
+O upgrade futuro para SSD de 120 GB não muda o papel do HD externo: ele continuará dedicado a backup, verificação e recuperação.
 
 ## Componentes da stack
 
@@ -79,13 +81,13 @@ Conecte o HD e execute:
 lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINT,MODEL,SERIAL,TRAN
 ```
 
-Exemplo esperado:
+Exemplo esperado com o hardware atual:
 
 ```text
-sda      14.9G disk                         SSD interno
-└─sda1   14.9G part ext4   ubuntu-root      /
-sdb     931.5G disk                         Seagate USB
-└─sdb1  931.5G part ntfs                    /media/...
+sda      ~29.8G disk                         SATA Flash interno
+└─sda1   ...    part ext4                    /
+sdb     ~931.5G disk                         Seagate USB
+└─sdb1   ...    part                         ...
 ```
 
 O nome pode ser diferente. Confirme pelo **modelo, capacidade, serial e coluna `TRAN`**.
@@ -227,7 +229,7 @@ sudo bash -c 'source /etc/homelab-backup/restic.env; restic snapshots'
 sudo bash -c 'source /etc/homelab-backup/restic.env; restic stats --mode restore-size'
 ```
 
-O backup é cancelado quando `/srv/backup` não está montado. Essa proteção impede que o processo grave acidentalmente os snapshots no SSD interno de 16 GB.
+O backup é cancelado quando `/srv/backup` não está montado. Essa proteção impede que o processo grave acidentalmente os snapshots no SATA Flash interno de 32 GB.
 
 ---
 
@@ -352,7 +354,7 @@ Este HD protege contra:
 - corrupção de configuração;
 - exclusão acidental;
 - falha lógica de um volume Docker;
-- reinstalação do SSD interno.
+- reinstalação ou troca do armazenamento interno.
 
 Ele não protege sozinho contra:
 
