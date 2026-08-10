@@ -9,14 +9,16 @@ O passo a passo completo está em:
 ## Arquitetura
 
 ```text
-SSD interno de 16 GB
+SATA Flash interno de 32 GB
 └── produção: Ubuntu, Docker e serviços
 
 HD externo de 1 TB
 └── recuperação: snapshots Restic, testes e status
 ```
 
-O HD não substitui o SSD para execução dos serviços. AdGuard Home, DHCP, Unbound, Portainer e Uptime Kuma continuam no armazenamento interno para não dependerem do cabo USB durante a inicialização.
+O HD não substitui o armazenamento interno para execução dos serviços. AdGuard Home, DHCP, Unbound, Portainer e Uptime Kuma continuam no SATA Flash para não dependerem do cabo USB durante a inicialização.
+
+O upgrade futuro para SSD de 120 GB não altera a arquitetura de backup: o HD externo continuará dedicado à recuperação.
 
 ## Tecnologia
 
