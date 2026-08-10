@@ -1,26 +1,45 @@
 # 15 — Upgrades e evolução
 
-## Prioridade 1 — SSD mSATA maior
+## Prioridade 1 — SSD de 120 GB no fim de 2026
 
-O upgrade mais importante é substituir os 16 GB por 120 ou 240 GB.
+O armazenamento atual validado na BIOS é um **SATA Flash Drive de 32 GB**. Ele será usado para colocar o HomeLab em produção agora.
+
+O upgrade planejado para o fim de 2026 é substituir esse armazenamento por um **SSD de 120 GB**.
 
 Benefícios:
 
-- mais margem para atualizações;
-- maior retenção de logs;
-- backups temporários locais;
-- possibilidade de novos containers;
-- menor risco de indisponibilidade por disco cheio.
+- mais margem para atualizações do Ubuntu;
+- maior folga para imagens e volumes Docker;
+- maior retenção de logs sem pressionar o disco;
+- possibilidade de adicionar containers leves;
+- menor risco de indisponibilidade por falta de espaço.
 
-Antes da troca:
+Até a troca, mantenha o ambiente enxuto e monitore:
 
-1. execute `scripts/backup.sh`;
-2. copie o backup para o notebook;
-3. exporte as configurações do AdGuard e Portainer;
-4. anote Netplan, hostname e usuários;
-5. instale Ubuntu limpo no novo SSD;
-6. reinstale Docker e Unbound;
-7. restaure os volumes.
+```bash
+df -h /
+docker system df
+journalctl --disk-usage
+```
+
+Mantenha preferencialmente pelo menos 20% do armazenamento interno livre.
+
+### Estratégia recomendada para a troca
+
+A preferência é **não clonar** o disco antigo. O upgrade será usado como teste real de recuperação:
+
+1. confirmar o último backup Restic no HD externo;
+2. executar e validar um teste de restauração;
+3. registrar Netplan, hostname e usuários;
+4. desligar o servidor com segurança;
+5. substituir o SATA Flash de 32 GB pelo SSD de 120 GB;
+6. instalar Ubuntu Server 24.04 LTS limpo no SSD novo;
+7. clonar este repositório GitHub;
+8. reinstalar Docker, Unbound e a stack;
+9. restaurar configurações e volumes necessários pelo Restic;
+10. executar `scripts/healthcheck.sh` e validar DNS/DHCP antes de considerar a migração concluída.
+
+O SATA Flash antigo deve ser preservado temporariamente sem alterações até o novo ambiente estar totalmente validado, funcionando como rollback físico adicional.
 
 ## Prioridade 2 — memória
 
@@ -41,6 +60,7 @@ Para manter DNS e DHCP durante quedas curtas, considere um nobreak pequeno para:
 
 - modem/ONT;
 - Dell Wyse;
+- HD externo de backup quando conectado;
 - eventual switch.
 
 Teste a opção de ligar automaticamente após retorno da energia na BIOS.
@@ -71,7 +91,7 @@ Essa separação mantém os serviços essenciais independentes dos laboratórios
 ## Melhorias futuras
 
 - segundo DNS para redundância;
-- backup automático para NAS ou notebook;
+- segunda cópia de backup fora do HomeLab;
 - Nginx Proxy Manager apenas para serviços internos;
 - Tailscale para administração remota autenticada;
 - UPS/NUT para desligamento seguro;
@@ -89,4 +109,4 @@ docker stats --no-stream
 docker system df
 ```
 
-Mantenha no mínimo 20% do SSD livre e preserve recursos para DNS e DHCP.
+Preserve recursos para DNS e DHCP e evite transformar o Wyse em host de cargas pesadas.
