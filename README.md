@@ -1,6 +1,6 @@
 # HomeLab Infrastructure Server
 
-Servidor doméstico de baixo consumo baseado em **Dell Wyse N03D**, **Ubuntu Server 24.04 LTS**, Docker e serviços de infraestrutura para a rede residencial.
+Servidor doméstico de baixo consumo baseado em **Dell Wyse N03D / 3290**, **Ubuntu Server 24.04 LTS**, Docker e serviços de infraestrutura para a rede residencial.
 
 ## Objetivo
 
@@ -20,15 +20,17 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 | Componente | Especificação |
 |---|---|
 | Equipamento | Dell Wyse N03D / 3290 |
-| CPU | Intel Celeron N2807 |
-| RAM | 4 GB DDR3 |
-| Armazenamento de produção | SSD mSATA 16 GB |
+| CPU | Intel Celeron N2807 @ 1.58 GHz |
+| RAM | 4 GB DDR3 / 1333 MT/s |
+| Armazenamento de produção atual | SATA Flash Drive 32 GB |
+| Upgrade planejado | SSD 120 GB no fim de 2026 |
 | Armazenamento de backup | HD externo Seagate 1 TB via USB |
 | Rede principal | Ethernet |
-| Recursos extras | HDMI e Wi-Fi |
-| Sistema | Ubuntu Server 24.04 LTS amd64 |
+| Recursos extras | HDMI, VGA, USB e Wi-Fi |
+| Sistema alvo | Ubuntu Server 24.04 LTS amd64 |
+| BIOS observada | Phoenix SecureCore, versão 1.0R (2017-12-22) |
 
-> O SSD interno mantém somente o sistema e os serviços ativos. O HD externo é exclusivo para snapshots, verificações e testes de restauração do HomeLab.
+> O equipamento chegou com Windows 10 Pro instalado no SATA Flash de 32 GB. O plano atual é apagar o Windows e instalar o Ubuntu Server diretamente nesse disco. O SSD de 120 GB será um upgrade futuro, não um pré-requisito para iniciar o HomeLab.
 
 ## Endereçamento adotado
 
@@ -54,7 +56,7 @@ flowchart TD
     Wyse --> Portainer
     Wyse --> Kuma[Uptime Kuma]
     Wyse --> Watchtower
-    Wyse --> SSD[SSD 16 GB\nProdução]
+    Wyse --> SSD[SATA Flash 32 GB\nProdução]
     Wyse --> USB[HD Seagate 1 TB\n/srv/backup]
     USB --> Restic[Restic\nSnapshots criptografados]
     Restic --> Restore[Testes de restauração]
@@ -70,9 +72,10 @@ flowchart TD
 4. O Unbound roda como serviço nativo do Ubuntu em `127.0.0.1:5335`.
 5. O Watchtower não atualiza automaticamente o DNS/DHCP. Serviços críticos são atualizados manualmente após backup.
 6. Portas administrativas ficam disponíveis somente na rede local e nenhuma porta deve ser encaminhada no modem para a Internet.
-7. O SSD de 16 GB é o ambiente de produção; o HD externo de 1 TB é o ambiente de recuperação.
-8. O backup é cancelado se `/srv/backup` não estiver montado, evitando gravar acidentalmente no SSD interno.
+7. O SATA Flash de 32 GB é o ambiente de produção inicial; o HD externo de 1 TB é o ambiente de recuperação.
+8. O backup é cancelado se `/srv/backup` não estiver montado, evitando gravar acidentalmente no armazenamento interno.
 9. A senha Restic não é armazenada no repositório e precisa ser guardada fora do servidor.
+10. O upgrade para SSD de 120 GB está planejado para o fim de 2026 e será tratado como exercício de disaster recovery/restauração.
 
 ## Ordem de implantação
 
@@ -198,10 +201,14 @@ Nunca desative o DHCP do modem antes de:
 - [x] Scripts operacionais
 - [x] Stack de backup externo documentada
 - [x] Timers de backup, manutenção e restore test
-- [ ] Instalação física do Wyse
-- [ ] Testes no hardware real
+- [x] Hardware recebido e ligado
+- [x] BIOS acessada e hardware básico validado
+- [x] SATA Flash de 32 GB reconhecido pela BIOS
+- [ ] Instalação do Ubuntu Server 24.04 LTS
+- [ ] Testes dos serviços no hardware real
 - [ ] Formatação e validação do HD externo real
-- [ ] Evidências e capturas de tela
+- [ ] Evidências e capturas de tela da implantação
+- [ ] Upgrade futuro para SSD de 120 GB
 
 ## Referências oficiais
 
