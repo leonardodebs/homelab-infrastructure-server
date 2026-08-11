@@ -36,7 +36,7 @@ sudo ufw status numbered
 
 Portas publicadas pelo Docker podem ser tratadas antes das regras normais do UFW. Este projeto reduz o risco de três formas:
 
-- Portainer e Uptime Kuma são vinculados explicitamente ao IP `192.168.100.10`;
+- Portainer e Uptime Kuma são vinculados explicitamente ao IP `192.168.100.2`;
 - o modem não possui encaminhamento de portas para o Wyse;
 - o AdGuard usa modo host, mas as regras UFW limitam o acesso à LAN.
 
@@ -52,9 +52,9 @@ sudo ufw status verbose
 De outro dispositivo na LAN:
 
 ```powershell
-Test-NetConnection 192.168.100.10 -Port 22
-Test-NetConnection 192.168.100.10 -Port 9443
-Test-NetConnection 192.168.100.10 -Port 3001
+Test-NetConnection 192.168.100.2 -Port 22
+Test-NetConnection 192.168.100.2 -Port 9443
+Test-NetConnection 192.168.100.2 -Port 3001
 ```
 
 ## Regras que não devem existir
