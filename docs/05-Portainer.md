@@ -13,7 +13,7 @@ nano compose/.env
 Confirme:
 
 ```text
-SERVER_IP=192.168.100.10
+SERVER_IP=192.168.100.2
 ```
 
 ## Subir somente o Portainer
@@ -27,7 +27,7 @@ docker compose --env-file compose/.env -f compose/compose.yaml up -d portainer
 Abra no navegador:
 
 ```text
-https://192.168.100.10:9443
+https://192.168.100.2:9443
 ```
 
 O certificado inicial é autoassinado. Confirme a exceção apenas na rede local.
@@ -44,7 +44,7 @@ O certificado inicial é autoassinado. Confirme a exceção apenas na rede local
 ```bash
 docker ps --filter name=portainer
 docker logs --tail 50 portainer
-curl -kI https://192.168.100.10:9443
+curl -kI https://192.168.100.2:9443
 ```
 
 ## Backup
