@@ -17,7 +17,7 @@ Transformar o Dell Wyse em servidor de infraestrutura doméstica, mantendo o Hua
 ### Dell Wyse
 
 - Ubuntu Server 24.04 LTS;
-- IP estático `192.168.100.10`;
+- IP estático `192.168.100.2`;
 - Docker, Portainer, Uptime Kuma e Watchtower;
 - AdGuard Home como DNS e DHCP;
 - Unbound como resolvedor DNS recursivo local.
@@ -27,7 +27,7 @@ Transformar o Dell Wyse em servidor de infraestrutura doméstica, mantendo o Hua
 ```mermaid
 flowchart TD
     Internet --> Huawei[Huawei HG8145V5-V2\n192.168.100.1\nNAT + Wi-Fi]
-    Huawei --> Wyse[Dell Wyse\n192.168.100.10\nUbuntu Server]
+    Huawei --> Wyse[Dell Wyse\n192.168.100.2\nUbuntu Server]
     Huawei --> Clientes[Clientes Wi-Fi e cabeados]
     Clientes -->|DHCP e DNS| AdGuard[AdGuard Home\n:53 e DHCP]
     AdGuard -->|127.0.0.1:5335| Unbound[Unbound]
@@ -43,7 +43,7 @@ flowchart TD
    - IP no pool `192.168.100.50-192.168.100.200`;
    - máscara `/24`;
    - gateway `192.168.100.1`;
-   - DNS `192.168.100.10`;
+   - DNS `192.168.100.2`;
    - domínio local opcional `home.arpa`.
 3. Reservas DHCP mantêm IPs previsíveis para notebooks, TVs e dispositivos importantes.
 
@@ -61,7 +61,7 @@ O AdGuard aplica listas de bloqueio e regras locais. Consultas permitidas seguem
 |---|---|
 | Rede | `192.168.100.0/24` |
 | Gateway/modem | `192.168.100.1` |
-| Dell Wyse | `192.168.100.10` |
+| Dell Wyse | `192.168.100.2` |
 | DHCP inicial | modem ativo |
 | DHCP final | AdGuard Home |
 | Pool DHCP final | `192.168.100.50-192.168.100.200` |
