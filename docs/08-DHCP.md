@@ -4,7 +4,7 @@ Esta é a etapa mais sensível do projeto. Execute somente depois de validar DNS
 
 ## Pré-requisitos
 
-- Wyse em `192.168.100.10`;
+- Wyse em `192.168.100.2`;
 - gateway em `192.168.100.1`;
 - AdGuard respondendo na porta 53;
 - Unbound respondendo em `127.0.0.1:5335`;
@@ -19,7 +19,7 @@ Antes da mudança, anote esta configuração manual para o notebook:
 IP:      192.168.100.20
 Máscara: 255.255.255.0
 Gateway: 192.168.100.1
-DNS:     192.168.100.10
+DNS:     192.168.100.2
 ```
 
 Ela permitirá acessar modem e servidor se o DHCP falhar.
@@ -37,7 +37,7 @@ Subnet mask: 255.255.255.0
 Range start: 192.168.100.50
 Range end: 192.168.100.200
 Lease duration: 86400 segundos
-DNS: 192.168.100.10
+DNS: 192.168.100.2
 Domain name: home.arpa
 ```
 
@@ -75,9 +75,9 @@ ipconfig /all
 Valide:
 
 ```text
-DHCP Server: 192.168.100.10
+DHCP Server: 192.168.100.2
 Default Gateway: 192.168.100.1
-DNS Servers: 192.168.100.10
+DNS Servers: 192.168.100.2
 ```
 
 ## Renovar no Linux
@@ -94,7 +94,7 @@ resolvectl status
 
 ```powershell
 ping 192.168.100.1
-ping 192.168.100.10
+ping 192.168.100.2
 nslookup ubuntu.com
 ```
 
