@@ -34,7 +34,7 @@ Teste por camadas:
 
 ```bash
 dig @127.0.0.1 -p 5335 ubuntu.com
-dig @192.168.100.10 ubuntu.com
+dig @192.168.100.2 ubuntu.com
 ```
 
 - se o primeiro falhar, investigue o Unbound;
