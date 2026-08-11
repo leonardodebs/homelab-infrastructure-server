@@ -36,7 +36,7 @@ network:
     enp1s0:
       dhcp4: false
       addresses:
-        - 192.168.100.10/24
+        - 192.168.100.2/24
       routes:
         - to: default
           via: 192.168.100.1
@@ -90,7 +90,7 @@ Crie uma chave no notebook, caso ainda não tenha:
 
 ```powershell
 ssh-keygen -t ed25519
-ssh-copy-id leonardo@192.168.100.10
+ssh-copy-id leonardo@192.168.100.2
 ```
 
 No Windows sem `ssh-copy-id`, copie o conteúdo de `$HOME/.ssh/id_ed25519.pub` para:
@@ -143,7 +143,7 @@ resolvectl status
 ss -lntup
 ```
 
-- [ ] IP `192.168.100.10` persistente;
+- [ ] IP `192.168.100.2` persistente;
 - [ ] gateway `192.168.100.1`;
 - [ ] SSH por chave funcionando;
 - [ ] login root remoto bloqueado;
