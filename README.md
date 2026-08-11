@@ -38,7 +38,7 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 |---|---|
 | Rede | `192.168.100.0/24` |
 | Modem/gateway | `192.168.100.1` |
-| Dell Wyse | `192.168.100.10` |
+| Dell Wyse | `192.168.100.2` |
 | Pool DHCP | `192.168.100.50` a `192.168.100.200` |
 | Domínio local opcional | `home.arpa` |
 
@@ -49,7 +49,7 @@ Adapte os valores antes da instalação caso a sua rede use outra faixa.
 ```mermaid
 flowchart TD
     Internet --> Modem[Huawei HG8145V5-V2\nNAT + Wi-Fi\nDHCP desativado]
-    Modem --> Wyse[Dell Wyse\nUbuntu Server\n192.168.100.10]
+    Modem --> Wyse[Dell Wyse\nUbuntu Server\n192.168.100.2]
     Wyse --> AGH[AdGuard Home\nDNS + DHCP]
     AGH --> Unbound[Unbound\n127.0.0.1:5335]
     Unbound --> RootDNS[DNS Root/Autoritativos]
