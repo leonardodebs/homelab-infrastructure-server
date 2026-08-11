@@ -12,7 +12,7 @@ docker compose --env-file compose/.env -f compose/compose.yaml up -d uptime-kuma
 Acesse:
 
 ```text
-http://192.168.100.10:3001
+http://192.168.100.2:3001
 ```
 
 Crie uma conta administrativa com senha exclusiva.
@@ -26,18 +26,18 @@ Crie uma conta administrativa com senha exclusiva.
 
 2. **AdGuard DNS**
    - Tipo: DNS
-   - Resolver: `192.168.100.10`
+   - Resolver: `192.168.100.2`
    - Hostname de teste: `ubuntu.com`
    - Porta: `53`
 
 3. **Portainer**
    - Tipo: HTTP(s)
-   - URL: `https://192.168.100.10:9443`
+   - URL: `https://192.168.100.2:9443`
    - Aceitar certificado autoassinado apenas para esse monitor.
 
 4. **AdGuard Web**
    - Tipo: HTTP
-   - URL: `http://192.168.100.10`
+   - URL: `http://192.168.100.2`
 
 5. **Internet**
    - Tipo: Ping
@@ -48,7 +48,7 @@ Crie uma conta administrativa com senha exclusiva.
 ```bash
 docker ps --filter name=uptime-kuma
 docker logs --tail 100 uptime-kuma
-curl -I http://192.168.100.10:3001
+curl -I http://192.168.100.2:3001
 ```
 
 ## Backup
