@@ -6,7 +6,7 @@ O AdGuard Home será executado em modo `host` para usar DNS, DHCP e identificar 
 
 - IP estático do Wyse configurado;
 - Unbound instalado e respondendo em `127.0.0.1:5335`;
-- endereço `192.168.100.10:53` disponível;
+- endereço `192.168.100.2:53` disponível;
 - DHCP do modem ainda ativo durante os testes iniciais.
 
 ## Verificar a porta 53
@@ -15,7 +15,7 @@ O AdGuard Home será executado em modo `host` para usar DNS, DHCP e identificar 
 sudo ss -lntup | grep ':53 '
 ```
 
-O Ubuntu pode manter o stub do `systemd-resolved` em `127.0.0.53:53`. Para evitar conflito, configure o AdGuard para escutar DNS **somente no IP Ethernet do servidor**, `192.168.100.10`, e não em `0.0.0.0`/todas as interfaces.
+O Ubuntu pode manter o stub do `systemd-resolved` em `127.0.0.53:53`. Para evitar conflito, configure o AdGuard para escutar DNS **somente no IP Ethernet do servidor**, `192.168.100.2`, e não em `0.0.0.0`/todas as interfaces.
 
 ## Subir o container
 
@@ -27,16 +27,16 @@ docker compose --env-file compose/.env -f compose/compose.yaml up -d adguardhome
 Acesse a configuração inicial:
 
 ```text
-http://192.168.100.10:3000
+http://192.168.100.2:3000
 ```
 
 ## Assistente inicial
 
 Use:
 
-- interface administrativa: `192.168.100.10`;
+- interface administrativa: `192.168.100.2`;
 - porta administrativa final: `80` ou outra porta livre;
-- servidor DNS: `192.168.100.10`, porta `53`;
+- servidor DNS: `192.168.100.2`, porta `53`;
 - usuário e senha exclusivos.
 
 Não selecione todas as interfaces para o DNS, pois isso pode disputar a porta do stub local do Ubuntu.
@@ -44,7 +44,7 @@ Não selecione todas as interfaces para o DNS, pois isso pode disputar a porta d
 Após concluir, o painel normalmente ficará em:
 
 ```text
-http://192.168.100.10
+http://192.168.100.2
 ```
 
 ## Upstream DNS
@@ -65,14 +65,14 @@ No próprio servidor:
 
 ```bash
 dig @127.0.0.1 -p 5335 google.com
-dig @192.168.100.10 google.com
+dig @192.168.100.2 google.com
 ```
 
-No notebook, configure temporariamente o DNS manual como `192.168.100.10` e teste:
+No notebook, configure temporariamente o DNS manual como `192.168.100.2` e teste:
 
 ```powershell
-nslookup google.com 192.168.100.10
-nslookup doubleclick.net 192.168.100.10
+nslookup google.com 192.168.100.2
+nslookup doubleclick.net 192.168.100.2
 ```
 
 ## Listas de bloqueio
@@ -110,10 +110,10 @@ Cadastre clientes por IP reservado ou MAC quando possível:
 docker ps --filter name=adguardhome
 docker logs --tail 100 adguardhome
 sudo ss -lntup | grep -E ':53 |:80 |:3000 '
-dig @192.168.100.10 cloudflare.com
+dig @192.168.100.2 cloudflare.com
 ```
 
-O resultado de `ss` deve mostrar o DNS em `192.168.100.10:53`, não em `0.0.0.0:53`.
+O resultado de `ss` deve mostrar o DNS em `192.168.100.2:53`, não em `0.0.0.0:53`.
 
 - [ ] painel acessível somente na LAN;
 - [ ] consultas aparecem no Query Log;
