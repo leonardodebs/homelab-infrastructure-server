@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-SERVER_IP="${SERVER_IP:-192.168.100.10}"
+SERVER_IP="${SERVER_IP:-192.168.100.2}"
 BACKUP_MOUNT="${BACKUP_MOUNT:-/srv/backup}"
 
 echo '== Host =='
