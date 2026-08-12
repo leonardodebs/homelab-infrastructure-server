@@ -1,9 +1,9 @@
 # 09B — Beszel — Monitoramento de recursos do host
 
-O **Beszel** complementa o Uptime Kuma.
+O **Beszel** complementa o Uptime Kuma:
 
 - **Uptime Kuma** monitora disponibilidade de serviços e endpoints;
-- **Beszel** monitora recursos do servidor e dos containers ao longo do tempo.
+- **Beszel** monitora recursos do servidor e containers ao longo do tempo.
 
 ## Objetivo
 
@@ -15,17 +15,17 @@ Monitorar no Dell Wyse:
 - tráfego de rede;
 - temperatura e sensores disponíveis;
 - uptime do host;
-- uso de CPU, memória e rede por container Docker;
-- alertas de CPU, memória, disco, banda, temperatura e indisponibilidade.
+- CPU, memória e rede por container Docker;
+- alertas de capacidade e indisponibilidade.
 
 ## Arquitetura adotada
 
 A implantação usa dois containers:
 
-1. **Beszel Hub**, acessível somente na LAN em `192.168.100.2:8090`;
-2. **Beszel Agent**, no mesmo host, coletando as métricas e iniciando uma conexão WebSocket de saída para o Hub.
+1. **Beszel Hub**, disponível na LAN em `192.168.100.2:8090`;
+2. **Beszel Agent**, no mesmo host, iniciando uma conexão WebSocket de saída para o Hub.
 
-A operação final usa **WebSocket-only** no Agent. O servidor SSH interno do Agent é desativado com `DISABLE_SSH=true`, portanto nenhuma porta de entrada do Agent precisa ser aberta no firewall.
+O Agent opera em **WebSocket-only** com `DISABLE_SSH=true`. A porta padrão `45876` não é publicada nem liberada no UFW.
 
 ```text
 Navegador LAN
@@ -44,20 +44,17 @@ Beszel Agent
      +--> Docker / containers
 ```
 
-## Etapa 1 — Subir o Hub
-
-Atualize o clone:
+## Hub
 
 ```bash
 cd ~/homelab-infrastructure-server
-git pull
+docker compose --env-file compose/.env -f compose/compose.yaml up -d beszel
 ```
 
-Baixe e inicie o Hub:
+Acesso:
 
-```bash
-docker compose --env-file compose/.env -f compose/compose.yaml pull beszel
-docker compose --env-file compose/.env -f compose/compose.yaml up -d beszel
+```text
+http://192.168.100.2:8090
 ```
 
 Valide:
@@ -68,91 +65,56 @@ docker logs --tail 100 beszel
 curl -I http://192.168.100.2:8090
 ```
 
-Acesse no navegador:
+## Credenciais do Agent
 
-```text
-http://192.168.100.2:8090
-```
+No painel, adicione o sistema `homelab` e gere `KEY` e `TOKEN`.
 
-Crie a conta administrativa com senha exclusiva.
-
-## Etapa 2 — Adicionar o próprio HomeLab
-
-No painel do Beszel:
-
-1. clique em **Add System**;
-2. use o nome `homelab`;
-3. escolha **Docker**;
-4. gere/copie a `KEY` e o `TOKEN`;
-5. não publique essas credenciais no GitHub.
-
-As credenciais ficam somente em `compose/.env`, que é ignorado pelo Git.
-
-Exemplo:
+Essas credenciais ficam somente em `compose/.env`, ignorado pelo Git:
 
 ```text
 SERVER_IP=192.168.100.2
-BESZEL_KEY=<chave publica>
-BESZEL_TOKEN=<token>
+BESZEL_KEY=<não versionar>
+BESZEL_TOKEN=<não versionar>
 ```
 
 ## Agent em WebSocket-only
 
-O Agent usa:
+Configuração principal:
 
 ```text
 HUB_URL=http://192.168.100.2:8090
 DISABLE_SSH=true
+FILESYSTEM=dm-0
 ```
 
-Com `HUB_URL`, o próprio Agent inicia a conexão WebSocket para o Hub. Como `DISABLE_SSH=true`, a porta padrão `45876` não é necessária para este HomeLab e não deve ser liberada no UFW.
-
-Suba o Agent:
+Suba e valide:
 
 ```bash
-docker compose --env-file compose/.env -f compose/compose.yaml pull beszel-agent
 docker compose --env-file compose/.env -f compose/compose.yaml up -d beszel-agent
-```
-
-Valide:
-
-```bash
 docker ps --filter name=beszel-agent
 docker logs --tail 100 beszel-agent
 docker inspect --format '{{.State.Health.Status}}' beszel-agent
 ```
 
-Nos logs, a evidência principal é:
+A evidência principal nos logs é uma conexão WebSocket bem-sucedida com o Hub.
 
-```text
-WebSocket connected host=192.168.100.2:8090
-```
+## Docker socket
 
-## Docker
-
-O Agent precisa de acesso somente leitura ao socket Docker para coletar métricas dos containers:
+O Agent usa:
 
 ```text
 /var/run/docker.sock:/var/run/docker.sock:ro
 ```
 
-O socket Docker é altamente privilegiado mesmo quando montado como somente leitura. Não exponha o Agent à Internet e use apenas a imagem oficial.
+Mesmo somente leitura, o Docker socket é sensível. Não exponha o Agent à Internet e não publique a porta 45876.
 
 ## Filesystem raiz
 
-No Wyse, o filesystem raiz está sobre LVM e corresponde ao device `dm-0`:
+O filesystem raiz do Wyse usa LVM e é observado pelo Agent como `dm-0`:
 
 ```text
 /dev/mapper/ubuntu--vg-ubuntu--lv -> dm-0
 ```
-
-O Agent é configurado explicitamente com:
-
-```text
-FILESYSTEM=dm-0
-```
-
-Isso evita depender da autodetecção do filesystem dentro do container.
 
 Valide no host:
 
@@ -161,68 +123,58 @@ df -h /
 lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINTS
 ```
 
-O percentual mostrado no Beszel deve ser compatível com o uso real de `/`.
+O percentual exibido pelo Beszel deve ser compatível com `df -h /`.
 
-## Persistência
+## Persistência e backup
 
-O Hub usa:
-
-```text
-beszel_data:/beszel_data
-```
-
-O Agent usa:
+Volumes:
 
 ```text
-beszel_agent_data:/var/lib/beszel-agent
+homelab_beszel_data
+homelab_beszel_agent_data
 ```
 
-Inclua `beszel_data` e `beszel_agent_data` na política de backup.
+Ambos são incluídos no Restic.
 
-## Firewall
+## Monitoramento atual
 
-Permita apenas o dashboard do Hub na LAN:
+O dashboard deve exibir métricas do host e dos containers:
 
-```bash
-sudo ufw allow from 192.168.100.0/24 to any port 8090 proto tcp comment 'Beszel LAN'
-```
+- `adguardhome`;
+- `portainer`;
+- `uptime-kuma`;
+- `beszel`;
+- `beszel-agent`;
+- `diun`;
+- `homelab-web`.
 
-Não abra `45876/tcp` e não crie port forwarding no Huawei.
+## Alertas sugeridos
 
-## Monitoramento recomendado
-
-Depois que o Agent estiver conectado, valide no dashboard:
-
-- CPU;
-- RAM;
-- swap;
-- load average;
-- filesystem `/`;
-- disk I/O;
-- interface `enxd037454bc6c1`;
-- temperatura;
-- containers `adguardhome`, `portainer`, `uptime-kuma`, `beszel`, `beszel-agent` e `diun`.
-
-## Alertas iniciais sugeridos
-
-Use limites conservadores e ajuste depois de observar o baseline do servidor:
+Ajuste depois de observar o baseline:
 
 - CPU acima de 90% por 10 minutos;
 - memória acima de 85% por 10 minutos;
 - disco acima de 80%;
 - temperatura acima de 75 °C por 5 minutos;
-- load average elevado de forma sustentada;
+- load elevado de forma sustentada;
 - sistema offline.
-
-Evite alertas muito agressivos antes de coletar pelo menos alguns dias de histórico.
 
 ## Segurança
 
 - dashboard somente na LAN;
-- Agent em WebSocket-only com `DISABLE_SSH=true`;
+- Agent WebSocket-only;
 - nenhuma porta do Agent exposta;
-- nenhuma porta do Beszel encaminhada no modem;
+- nenhuma porta encaminhada no modem;
 - senha administrativa exclusiva;
 - `KEY` e `TOKEN` nunca versionados;
-- backup dos volumes `beszel_data` e `beszel_agent_data`;
+- volumes incluídos no backup;
 - atualizações revisadas manualmente após notificação do Diun.
+
+## Estado atual
+
+- [x] Hub disponível em `:8090`;
+- [x] Agent saudável e conectado via WebSocket;
+- [x] SSH interno do Agent desativado;
+- [x] filesystem raiz monitorado;
+- [x] métricas de host e containers validadas;
+- [x] volumes incluídos no Restic.
