@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Permitir somente o tráfego necessário da rede local `192.168.100.0/24` e da interface LAN `enxd037454bc6c1`.
+Permitir somente o tráfego necessário da rede local `192.168.100.0/24`, da interface LAN `enxd037454bc6c1` e da rede Docker interna usada pelo Uptime Kuma para monitorar serviços publicados no próprio host.
 
 ## Política base
 
@@ -39,6 +39,43 @@ A porta `68/udp` também não é aberta como serviço de entrada permanente. O s
 Não deve existir regra equivalente `67/udp (v6)`: DHCPv6 usa UDP/546 e UDP/547, e o AdGuard não fornece DHCPv6 neste projeto.
 
 O Unbound permanece somente em `127.0.0.1:5335` e não recebe regra de entrada na LAN.
+
+## Rede Docker e Uptime Kuma
+
+O Uptime Kuma roda na rede Docker `homelab_default`. No ambiente validado, essa rede usa:
+
+```text
+Rede    : homelab_default
+Subnet  : 172.18.0.0/16
+Gateway : 172.18.0.1
+Kuma    : 172.18.0.2
+```
+
+Valide sempre a subnet real antes de criar regras:
+
+```bash
+docker network inspect homelab_default \
+  --format '{{range .IPAM.Config}}Subnet={{.Subnet}} Gateway={{.Gateway}}{{end}}'
+```
+
+Quando o Kuma monitora `192.168.100.2:53`, `:80`, `:8080`, `:8090` ou `:9443`, o tráfego chega ao host com origem na rede Docker, não em `192.168.100.0/24`. Com `default deny incoming`, os checks podem ficar em timeout mesmo com os containers saudáveis.
+
+Para permitir apenas o monitoramento interno necessário, use a subnet Docker detectada:
+
+```bash
+DOCKER_CIDR="$(docker network inspect homelab_default --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}')"
+
+sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 53 proto tcp comment 'Docker monitor DNS TCP'
+sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 53 proto udp comment 'Docker monitor DNS UDP'
+sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 80 proto tcp comment 'Docker monitor AdGuard Web'
+sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 8080 proto tcp comment 'Docker monitor HomeLab Web'
+sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 8090 proto tcp comment 'Docker monitor Beszel'
+sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 9443 proto tcp comment 'Docker monitor Portainer'
+```
+
+Essas regras não expõem os serviços para a Internet. Elas permitem somente que containers da rede interna `homelab_default` atinjam as portas selecionadas no IP LAN do host.
+
+Se a rede Docker for removida e recriada com outra subnet, revise essas regras. O script `scripts/configure-ufw.sh` detecta dinamicamente a subnet atual antes de aplicá-las.
 
 ## IPv6
 
@@ -83,7 +120,8 @@ O projeto reduz o risco por estas medidas:
 - Portainer, Uptime Kuma, HomeLab Web e Beszel Hub são vinculados explicitamente ao IP `192.168.100.2`;
 - o Huawei não possui port forwarding para o Wyse;
 - nenhuma interface administrativa deve ser publicada em `0.0.0.0`;
-- o AdGuard usa modo host e recebe regras UFW específicas para a LAN.
+- o AdGuard usa modo host e recebe regras UFW específicas para a LAN;
+- o acesso Docker -> host é limitado às portas necessárias para os checks do Uptime Kuma.
 
 Se o servidor ganhar outras interfaces, VLANs, VPNs ou exposição externa, implemente regras explícitas na cadeia `DOCKER-USER` além do UFW.
 
@@ -163,6 +201,8 @@ DHCP Server : 192.168.100.2
 Gateway     : 192.168.100.1
 DNS         : 192.168.100.2
 ```
+
+No Uptime Kuma, valide que os monitores de AdGuard DNS, AdGuard Web, HomeLab Web, Beszel Web e Portainer voltaram para `Ligado`.
 
 ## Regras que não devem existir
 
