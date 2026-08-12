@@ -10,7 +10,8 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 - DNS com bloqueio de anúncios e rastreadores pelo AdGuard Home;
 - resolução DNS recursiva e cache local com Unbound;
 - gerenciamento de containers pelo Portainer;
-- monitoramento pelo Uptime Kuma;
+- monitoramento de disponibilidade pelo Uptime Kuma;
+- monitoramento de CPU, memória, disco, rede, temperatura e containers pelo Beszel;
 - verificação controlada de atualizações de imagens com Diun;
 - firewall, backups e manutenção documentada;
 - recuperação local por HD externo com Restic.
@@ -50,7 +51,8 @@ flowchart TD
     AGH --> Unbound[Unbound\n127.0.0.1:5335]
     Unbound --> RootDNS[DNS Root/Autoritativos]
     Wyse --> Portainer
-    Wyse --> Kuma[Uptime Kuma]
+    Wyse --> Kuma[Uptime Kuma\nDisponibilidade]
+    Wyse --> Beszel[Beszel\nCPU + RAM + Disco + Rede + Docker]
     Wyse --> Diun[Diun\nImage Update Notifier]
     Wyse --> SSD[SATA Flash 32 GB\nProdução]
     Wyse --> USB[HD Seagate 1 TB\n/srv/backup]
@@ -66,12 +68,13 @@ flowchart TD
 2. O DHCP do Huawei está desativado e o AdGuard Home entrega DHCPv4 aos clientes.
 3. O AdGuard Home usa `network_mode: host`, necessário para DHCP e identificação real dos clientes.
 4. O Unbound roda como serviço nativo do Ubuntu em `127.0.0.1:5335`.
-5. O Diun apenas detecta novas imagens; atualizações de containers são executadas manualmente após revisão e backup.
-6. Portas administrativas ficam disponíveis somente na rede local e nenhuma porta deve ser encaminhada no modem para a Internet.
-7. O SATA Flash de 32 GB é o ambiente de produção inicial; o HD externo de 1 TB será o ambiente de recuperação.
-8. O backup é cancelado se `/srv/backup` não estiver montado, evitando gravar acidentalmente no armazenamento interno.
-9. A senha Restic não é armazenada no repositório e precisa ser guardada fora do servidor.
-10. O upgrade para SSD de 120 GB está planejado para o fim de 2026 e será tratado como exercício de disaster recovery/restauração.
+5. Uptime Kuma monitora disponibilidade; Beszel monitora recursos e histórico do host/containers.
+6. O Diun apenas detecta novas imagens; atualizações de containers são executadas manualmente após revisão e backup.
+7. Portas administrativas ficam disponíveis somente na rede local e nenhuma porta deve ser encaminhada no modem para a Internet.
+8. O SATA Flash de 32 GB é o ambiente de produção inicial; o HD externo de 1 TB será o ambiente de recuperação.
+9. O backup é cancelado se `/srv/backup` não estiver montado, evitando gravar acidentalmente no armazenamento interno.
+10. A senha Restic não é armazenada no repositório e precisa ser guardada fora do servidor.
+11. O upgrade para SSD de 120 GB está planejado para o fim de 2026 e será tratado como exercício de disaster recovery/restauração.
 
 ## Ordem de implantação
 
@@ -85,13 +88,14 @@ flowchart TD
 8. [Unbound](docs/07-Unbound.md)
 9. [Migração do DHCP](docs/08-DHCP.md)
 10. [Uptime Kuma](docs/09-Uptime-Kuma.md)
-11. [Diun](docs/10-Diun.md)
-12. [Firewall UFW](docs/11-UFW.md)
-13. [Backup e restauração](docs/12-Backup.md)
-14. [Manutenção](docs/13-Manutencao.md)
-15. [Troubleshooting](docs/14-Troubleshooting.md)
-16. [Upgrades futuros](docs/15-Upgrade.md)
-17. [HD externo e stack Restic](docs/16-HD-Externo-Backup.md)
+11. [Beszel](docs/09-Beszel.md)
+12. [Diun](docs/10-Diun.md)
+13. [Firewall UFW](docs/11-UFW.md)
+14. [Backup e restauração](docs/12-Backup.md)
+15. [Manutenção](docs/13-Manutencao.md)
+16. [Troubleshooting](docs/14-Troubleshooting.md)
+17. [Upgrades futuros](docs/15-Upgrade.md)
+18. [HD externo e stack Restic](docs/16-HD-Externo-Backup.md)
 
 ## Stack de backup externo
 
@@ -195,7 +199,9 @@ O comando de preparação é destrutivo e exige que o disco correto seja identif
 - [x] DNS dos clientes apontando para `192.168.100.2`
 - [x] Bloqueio de anúncios validado
 - [x] Uptime Kuma instalado e monitores iniciais configurados
-- [ ] Diun instalado e validado
+- [x] Diun instalado e validado
+- [ ] Beszel Hub instalado
+- [ ] Beszel Agent conectado e métricas do host validadas
 - [ ] Firewall UFW aplicado
 - [ ] Formatação e validação do HD externo real
 - [ ] Stack Restic instalada e restore test validado
@@ -210,6 +216,7 @@ O comando de preparação é destrutivo e exige que o disco correto seja identif
 - Unbound: https://unbound.docs.nlnetlabs.nl/
 - Portainer: https://docs.portainer.io/
 - Uptime Kuma: https://github.com/louislam/uptime-kuma
+- Beszel: https://beszel.dev/
 - Diun: https://crazymax.dev/diun/
 - OISD: https://oisd.nl/setup/adguardhome
 - Restic: https://restic.readthedocs.io/en/stable/
