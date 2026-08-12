@@ -1,46 +1,43 @@
 # 02 — Instalação do Ubuntu Server
 
-## ISO recomendada
+## ISO utilizada
 
 Use a imagem oficial **Ubuntu Server 24.04 LTS amd64**.
 
-Arquivo esperado:
+Arquivo de referência:
 
 ```text
 ubuntu-24.04.x-live-server-amd64.iso
 ```
 
-## Hardware atual da instalação
+A implantação atual está em **Ubuntu Server 24.04.4 LTS**.
 
-O equipamento real está com:
+## Hardware da instalação
 
 - Dell Wyse N03D / 3290;
 - Intel Celeron N2807;
 - 4 GB de RAM;
 - SATA Flash Drive interno de 32 GB;
-- Windows 10 Pro atualmente instalado.
+- armazenamento interno dedicado ao Ubuntu.
 
-O Windows será removido e o SATA Flash de 32 GB será dedicado integralmente ao Ubuntu Server. O HD externo de 1 TB deve permanecer **desconectado durante a instalação** para eliminar qualquer risco de selecionar o disco errado.
+Durante uma reinstalação, mantenha qualquer mídia de backup **desconectada** até o sistema operacional estar instalado e o disco correto ser validado.
 
-## Instalação
+## Procedimento de instalação/reinstalação
 
 1. Conecte vídeo, teclado, Ethernet e o pendrive do Ubuntu.
-2. Deixe o HD externo de 1 TB desconectado.
+2. Desconecte a mídia de backup.
 3. Inicie pelo pendrive USB.
 4. Selecione `Try or Install Ubuntu Server`.
-5. Idioma: English ou Português.
-6. Teclado: Portuguese (Brazil).
-7. Tipo de instalação: Ubuntu Server padrão, sem interface gráfica.
-8. Rede: mantenha DHCP nesta fase.
-9. Proxy: deixe em branco.
-10. Mirror: mantenha o padrão.
-11. Armazenamento: selecione somente o **SATA Flash interno de 32 GB** e use o disco inteiro.
-12. Confirme a remoção das partições existentes do Windows apenas depois de validar novamente o disco escolhido.
-13. Hostname: `homeserver`.
-14. Usuário sugerido: `leonardo`.
-15. Marque `Install OpenSSH server`.
-16. Não instale snaps adicionais.
-17. Finalize, remova o pendrive e reinicie.
+5. Use Ubuntu Server padrão, sem interface gráfica.
+6. Mantenha DHCP temporariamente durante a instalação.
+7. Deixe proxy em branco e mirror no padrão, salvo necessidade específica.
+8. Selecione somente o **SATA Flash interno de 32 GB**.
+9. Confirme a remoção das partições existentes somente depois de revisar o disco selecionado.
+10. Hostname: `homelab`.
+11. Usuário administrativo: `leonardo`.
+12. Instale `OpenSSH server`.
+13. Não instale snaps adicionais sem necessidade.
+14. Finalize, remova o pendrive e reinicie.
 
 ## Primeiro acesso
 
@@ -52,7 +49,7 @@ hostnamectl
 lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT,MODEL
 ```
 
-Confirme que o sistema raiz está no disco interno de aproximadamente 32 GB.
+Confirme que `/` está no armazenamento interno de aproximadamente 32 GB.
 
 No notebook:
 
@@ -69,7 +66,7 @@ sudo apt autoremove --purge -y
 sudo reboot
 ```
 
-Após reiniciar:
+Depois:
 
 ```bash
 cat /etc/os-release
@@ -107,22 +104,15 @@ EOF
 sudo systemctl restart systemd-journald
 ```
 
-O controle de logs continua importante mesmo com 32 GB, pois o mesmo disco armazenará Ubuntu, pacotes, imagens Docker e volumes ativos.
+O mesmo disco armazena Ubuntu, pacotes, imagens Docker e volumes ativos; por isso a política de logs permanece importante.
 
-## Validação
+## Estado validado da implantação
 
-```bash
-df -h /
-free -h
-systemctl is-active ssh
-journalctl --disk-usage
-```
-
-- [ ] Ubuntu inicializa sem pendrive;
-- [ ] Windows removido e disco interno dedicado ao Ubuntu;
-- [ ] SSH acessível;
-- [ ] hostname `homeserver`;
-- [ ] horário correto;
-- [ ] sistema atualizado;
-- [ ] espaço livre anotado;
-- [ ] HD externo permaneceu fora do processo de instalação.
+- [x] Ubuntu Server 24.04.4 LTS inicializa pelo SATA Flash interno;
+- [x] Windows removido;
+- [x] hostname `homelab`;
+- [x] SSH acessível;
+- [x] timezone `America/Sao_Paulo`;
+- [x] sistema atualizado durante a implantação;
+- [x] armazenamento interno expandido para utilizar o LVM disponível;
+- [x] mídia de backup mantida separada do disco de sistema.
