@@ -202,7 +202,7 @@ O comando de preparação é destrutivo e exige que o disco correto seja identif
 - [x] Diun instalado e validado
 - [x] Beszel Hub instalado e saudável
 - [x] Beszel Agent conectado e métricas do host validadas
-- [ ] Firewall UFW aplicado
+- [x] Firewall UFW aplicado e validado
 - [ ] Formatação e validação do HD externo real
 - [ ] Stack Restic instalada e restore test validado
 - [ ] Evidências e capturas de tela da implantação
