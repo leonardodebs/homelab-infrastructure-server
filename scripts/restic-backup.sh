@@ -25,7 +25,7 @@ set +a
 : "${HOMELAB_PROJECT_DIR:?HOMELAB_PROJECT_DIR não definido}"
 : "${BACKUP_MOUNT:=/srv/backup}"
 
-mountpoint -q "$BACKUP_MOUNT" || fail "$BACKUP_MOUNT não está montado. Backup cancelado para não gravar no SSD interno."
+mountpoint -q "$BACKUP_MOUNT" || fail "$BACKUP_MOUNT não está montado. Backup cancelado para não gravar no armazenamento interno."
 [[ -r "$RESTIC_PASSWORD_FILE" ]] || fail "Arquivo de senha não encontrado: $RESTIC_PASSWORD_FILE"
 [[ -r "$EXCLUDES_FILE" ]] || fail "Arquivo de exclusões não encontrado: $EXCLUDES_FILE"
 [[ -d "$HOMELAB_PROJECT_DIR" ]] || fail "Diretório do projeto não encontrado: $HOMELAB_PROJECT_DIR"
@@ -36,6 +36,8 @@ chmod 0700 "$RESTIC_CACHE_DIR" "$STATE_DIR"
 exec 9>"$LOCK_FILE"
 flock -n 9 || fail "Já existe outra operação Restic em execução."
 
+# Containers com estado persistente que são interrompidos brevemente para que os
+# respectivos volumes sejam copiados em um ponto consistente.
 RUNNING_CONTAINERS=()
 restart_containers() {
   local container
@@ -47,7 +49,14 @@ restart_containers() {
 trap restart_containers EXIT INT TERM
 
 if systemctl is-active --quiet docker; then
-  for container in adguardhome portainer uptime-kuma; do
+  for container in \
+    adguardhome \
+    portainer \
+    uptime-kuma \
+    beszel \
+    beszel-agent \
+    diun
+  do
     if docker ps --format '{{.Names}}' | grep -Fxq "$container"; then
       RUNNING_CONTAINERS+=("$container")
     fi
@@ -59,17 +68,33 @@ if systemctl is-active --quiet docker; then
   fi
 fi
 
+# Configuração do host e do projeto. O portal HomeLab é estático e já está
+# incluído dentro de HOMELAB_PROJECT_DIR.
 SOURCES=(
   "$HOMELAB_PROJECT_DIR"
+  "/etc/fstab"
   "/etc/netplan"
   "/etc/unbound"
   "/etc/docker"
   "/etc/ufw"
+  "/etc/default/ufw"
+  "/etc/systemd/system"
+  "/etc/update-motd.d/99-homelab"
   "/etc/homelab-backup/restic.env"
   "/etc/homelab-backup/excludes.txt"
 )
 
-for volume in homelab_portainer_data homelab_adguard_work homelab_adguard_conf homelab_uptime_kuma_data; do
+# Volumes persistentes existentes na stack atual. Não são copiadas imagens,
+# layers ou containers recriáveis do Docker.
+for volume in \
+  homelab_portainer_data \
+  homelab_adguard_work \
+  homelab_adguard_conf \
+  homelab_uptime_kuma_data \
+  homelab_beszel_data \
+  homelab_beszel_agent_data \
+  homelab_diun_data
+do
   if docker volume inspect "$volume" >/dev/null 2>&1; then
     mountpoint_path="$(docker volume inspect -f '{{.Mountpoint}}' "$volume")"
     [[ -d "$mountpoint_path" ]] && SOURCES+=("$mountpoint_path")
