@@ -2,29 +2,41 @@
 
 ## Objetivo
 
-Permitir somente o tráfego necessário da rede local `192.168.100.0/24`, da interface LAN `enxd037454bc6c1` e da rede Docker interna usada pelo Uptime Kuma para monitorar serviços publicados no próprio host.
+Permitir somente o tráfego necessário da LAN `192.168.100.0/24` e da rede Docker interna usada pelo Uptime Kuma para alcançar serviços publicados no próprio host.
+
+O nome exato da interface Ethernet é detectado no servidor e não é documentado como identificador público fixo.
+
+## Detectar a interface LAN
+
+```bash
+LAN_IF="$(ip -o -4 addr show | awk '$4 ~ /^192\.168\.100\.2\// {print $2; exit}')"
+echo "$LAN_IF"
+```
+
+O resultado deve corresponder à interface do adaptador TP-Link UE300 que possui `192.168.100.2/24`.
 
 ## Política base
 
 ```bash
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
+sudo ufw default deny routed
 ```
 
-## Regras para a LAN
+## Regras da LAN
 
-Aplique primeiro a regra de SSH para não perder o acesso remoto:
+SSH primeiro:
 
 ```bash
 sudo ufw allow from 192.168.100.0/24 to any port 22 proto tcp comment 'SSH LAN'
 ```
 
-Depois aplique os serviços da LAN:
+Serviços:
 
 ```bash
 sudo ufw allow from 192.168.100.0/24 to any port 53 proto tcp comment 'DNS TCP LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 53 proto udp comment 'DNS UDP LAN'
-sudo ufw allow in on enxd037454bc6c1 from 0.0.0.0/0 to any port 67 proto udp comment 'DHCP server LAN IPv4'
+sudo ufw allow in on "$LAN_IF" from 0.0.0.0/0 to any port 67 proto udp comment 'DHCP server LAN IPv4'
 sudo ufw allow from 192.168.100.0/24 to any port 80 proto tcp comment 'AdGuard Web LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 3001 proto tcp comment 'Uptime Kuma LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 8080 proto tcp comment 'HomeLab Web LAN'
@@ -32,39 +44,27 @@ sudo ufw allow from 192.168.100.0/24 to any port 8090 proto tcp comment 'Beszel 
 sudo ufw allow from 192.168.100.0/24 to any port 9443 proto tcp comment 'Portainer LAN'
 ```
 
-A porta `3000/tcp` não é necessária depois do setup inicial do AdGuard Home.
+A porta 3000/tcp do assistente inicial do AdGuard não é necessária depois da instalação.
 
-A porta `68/udp` também não é aberta como serviço de entrada permanente. O servidor DHCPv4 do AdGuard escuta em UDP/67. A regra usa origem IPv4 explícita (`0.0.0.0/0`) e é limitada à interface LAN porque clientes sem lease ainda podem iniciar DHCP usando origem `0.0.0.0`.
+UDP/67 é DHCPv4. Não deve existir regra equivalente IPv6 para essa porta; DHCPv6 usa portas diferentes e está desativado neste projeto.
 
-Não deve existir regra equivalente `67/udp (v6)`: DHCPv6 usa UDP/546 e UDP/547, e o AdGuard não fornece DHCPv6 neste projeto.
-
-O Unbound permanece somente em `127.0.0.1:5335` e não recebe regra de entrada na LAN.
+O Unbound permanece em `127.0.0.1:5335` e não recebe regra LAN.
 
 ## Rede Docker e Uptime Kuma
 
-O Uptime Kuma roda na rede Docker `homelab_default`. No ambiente validado, essa rede usa:
-
-```text
-Rede    : homelab_default
-Subnet  : 172.18.0.0/16
-Gateway : 172.18.0.1
-Kuma    : 172.18.0.2
-```
-
-Valide sempre a subnet real antes de criar regras:
+Descubra a subnet atual:
 
 ```bash
-docker network inspect homelab_default \
-  --format '{{range .IPAM.Config}}Subnet={{.Subnet}} Gateway={{.Gateway}}{{end}}'
+DOCKER_CIDR="$(docker network inspect homelab_default \
+  --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}')"
+echo "$DOCKER_CIDR"
 ```
 
-Quando o Kuma monitora `192.168.100.2:53`, `:80`, `:8080`, `:8090` ou `:9443`, o tráfego chega ao host com origem na rede Docker, não em `192.168.100.0/24`. Com `default deny incoming`, os checks podem ficar em timeout mesmo com os containers saudáveis.
+No ambiente validado, a rede foi criada como `homelab_default`, mas a subnet não deve ser tratada como valor permanente porque pode mudar se a rede for recriada.
 
-Para permitir apenas o monitoramento interno necessário, use a subnet Docker detectada:
+Quando o Uptime Kuma monitora serviços em `192.168.100.2`, o tráfego chega com origem na rede Docker. Por isso são necessárias regras específicas:
 
 ```bash
-DOCKER_CIDR="$(docker network inspect homelab_default --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}')"
-
 sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 53 proto tcp comment 'Docker monitor DNS TCP'
 sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 53 proto udp comment 'Docker monitor DNS UDP'
 sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 80 proto tcp comment 'Docker monitor AdGuard Web'
@@ -73,88 +73,54 @@ sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 8090 proto tcp comment 
 sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 9443 proto tcp comment 'Docker monitor Portainer'
 ```
 
-Essas regras não expõem os serviços para a Internet. Elas permitem somente que containers da rede interna `homelab_default` atinjam as portas selecionadas no IP LAN do host.
-
-Se a rede Docker for removida e recriada com outra subnet, revise essas regras. O script `scripts/configure-ufw.sh` detecta dinamicamente a subnet atual antes de aplicá-las.
+O script `scripts/configure-ufw.sh` detecta tanto a interface LAN quanto a subnet Docker antes de aplicar as regras.
 
 ## IPv6
-
-Antes de ativar o UFW, confirme:
 
 ```bash
 grep '^IPV6=' /etc/default/ufw
 ```
 
-O esperado é:
+Esperado:
 
 ```text
 IPV6=yes
 ```
 
-O servidor possui IPv6 global; portanto o firewall deve tratar IPv4 e IPv6. A política `deny incoming` deve permanecer ativa também para IPv6, sem criar liberações administrativas globais desnecessárias.
+O host possui IPv6 global. A política de entrada deve continuar negando tráfego IPv6 não solicitado, sem abrir interfaces administrativas globalmente.
 
-## Ativação
-
-Confira as regras adicionadas:
+## Ativação e validação
 
 ```bash
 sudo ufw show added
-```
-
-Ative:
-
-```bash
 sudo ufw --force enable
 sudo ufw status numbered
 sudo ufw status verbose
 ```
 
-Mantenha a sessão SSH atual aberta e teste uma segunda sessão SSH antes de encerrar a primeira.
+Mantenha uma sessão SSH aberta e valide uma segunda conexão antes de encerrar a primeira.
 
-## Docker e UFW
+Sockets esperados:
 
-Portas publicadas pelo Docker podem ser processadas pelas regras do Docker antes das regras normais do UFW.
+```text
+22/tcp       SSH
+53/tcp/udp   AdGuard DNS
+67/udp       AdGuard DHCPv4
+80/tcp       AdGuard Web
+3001/tcp     Uptime Kuma
+8080/tcp     HomeLab Web
+8090/tcp     Beszel Hub
+9443/tcp     Portainer
+127.0.0.1:5335 Unbound
+```
 
-O projeto reduz o risco por estas medidas:
-
-- Portainer, Uptime Kuma, HomeLab Web e Beszel Hub são vinculados explicitamente ao IP `192.168.100.2`;
-- o Huawei não possui port forwarding para o Wyse;
-- nenhuma interface administrativa deve ser publicada em `0.0.0.0`;
-- o AdGuard usa modo host e recebe regras UFW específicas para a LAN;
-- o acesso Docker -> host é limitado às portas necessárias para os checks do Uptime Kuma.
-
-Se o servidor ganhar outras interfaces, VLANs, VPNs ou exposição externa, implemente regras explícitas na cadeia `DOCKER-USER` além do UFW.
-
-## Verificação no servidor
+Valide:
 
 ```bash
-sudo ss -lntup
-sudo ufw status verbose
+sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3001|:8080|:8090|:9443|:5335)\b'
 ```
 
-Portas esperadas na LAN:
-
-```text
-22/tcp     SSH
-53/tcp     AdGuard DNS
-53/udp     AdGuard DNS
-67/udp     AdGuard DHCPv4
-80/tcp     AdGuard Web
-3001/tcp   Uptime Kuma
-8080/tcp   HomeLab Web Portal
-8090/tcp   Beszel Hub
-9443/tcp   Portainer
-```
-
-Portas locais esperadas:
-
-```text
-127.0.0.1:5335   Unbound
-```
-
-## Verificação de outro dispositivo da LAN
-
-Use um **Windows PowerShell local no notebook**, com prompt semelhante a `PS C:\Users\Leonardo>`.
+## Validação a partir de um notebook Windows
 
 ```powershell
 Test-NetConnection 192.168.100.2 -Port 22
@@ -163,38 +129,17 @@ Test-NetConnection 192.168.100.2 -Port 3001
 Test-NetConnection 192.168.100.2 -Port 8080
 Test-NetConnection 192.168.100.2 -Port 8090
 Test-NetConnection 192.168.100.2 -Port 9443
-```
-
-Portal interno:
-
-```text
-http://192.168.100.2:8080
-```
-
-Depois valide nova conexão SSH:
-
-```powershell
-ssh leonardo@192.168.100.2
-```
-
-Saia da sessão com `exit` e, de volta ao PowerShell local, valide DNS:
-
-```powershell
 nslookup ubuntu.com
 nslookup doubleclick.net
 ```
 
-O resolver esperado no notebook é `192.168.100.2`. A consulta de `doubleclick.net` deve retornar bloqueio (`0.0.0.0` e/ou `::`).
-
-Por fim, valide DHCP:
+Depois valide DHCP:
 
 ```powershell
-ipconfig /release
-ipconfig /renew
 ipconfig /all
 ```
 
-No adaptador Wi-Fi, o esperado é:
+Esperado:
 
 ```text
 DHCP Server : 192.168.100.2
@@ -202,14 +147,33 @@ Gateway     : 192.168.100.1
 DNS         : 192.168.100.2
 ```
 
-No Uptime Kuma, valide que os monitores de AdGuard DNS, AdGuard Web, HomeLab Web, Beszel Web e Portainer voltaram para `Ligado`.
+## Docker e UFW
+
+Portas publicadas pelo Docker podem ser processadas pelas regras do Docker antes das regras UFW comuns. O projeto reduz o risco usando:
+
+- binding explícito das interfaces web em `192.168.100.2`;
+- ausência de port forwarding no Huawei;
+- UFW com entrada padrão negada;
+- acesso Docker -> host restrito aos checks necessários.
+
+Se o servidor ganhar VPN, VLAN, segunda interface ou exposição externa, revise também a cadeia `DOCKER-USER`.
 
 ## Regras que não devem existir
 
-- liberações administrativas globais como `ufw allow 9443/tcp` sem origem limitada;
-- `ufw allow 3000/tcp` depois do setup do AdGuard;
-- regra LAN para o Unbound `5335`;
-- regra IPv6 em UDP/67 para DHCP;
-- port forwarding no modem;
-- exposição de SSH, Portainer, Uptime Kuma, HomeLab Web, Beszel ou AdGuard para a Internet;
+- liberações administrativas globais sem origem limitada;
+- porta 3000 do AdGuard após o setup;
+- regra LAN para Unbound/5335;
+- UDP/67 em IPv6;
+- port forwarding no modem para interfaces administrativas;
+- exposição da porta 45876 do Beszel Agent;
 - `ufw disable` como solução permanente.
+
+## Estado atual
+
+- [x] UFW ativo;
+- [x] entrada padrão negada;
+- [x] IPv6 tratado pelo firewall;
+- [x] serviços administrativos limitados à LAN;
+- [x] DHCPv4 limitado à interface LAN;
+- [x] regras Docker -> host validadas com Uptime Kuma;
+- [x] nenhuma porta administrativa encaminhada no modem.
