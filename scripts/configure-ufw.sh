@@ -13,6 +13,7 @@ set -Eeuo pipefail
 # 67/udp   DHCP Server IPv4 (somente na interface LAN)
 # 80/tcp   AdGuard Home
 # 3001/tcp Uptime Kuma
+# 8080/tcp HomeLab Web Portal
 # 8090/tcp Beszel
 # 9443/tcp Portainer
 
@@ -30,11 +31,9 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 log "Etapa 1/8 - Pré-validações"
-
 command -v ufw >/dev/null 2>&1 || die "UFW não está instalado."
 ip link show "$LAN_IF" >/dev/null 2>&1 || die "Interface $LAN_IF não existe."
-ip -4 addr show dev "$LAN_IF" | grep -q "$SERVER_IP/" \
-  || die "O IP $SERVER_IP não foi encontrado na interface $LAN_IF."
+ip -4 addr show dev "$LAN_IF" | grep -q "$SERVER_IP/" || die "O IP $SERVER_IP não foi encontrado na interface $LAN_IF."
 
 IPV6_VALUE="$(awk -F= '/^IPV6=/{print $2}' /etc/default/ufw 2>/dev/null || true)"
 if [[ "$IPV6_VALUE" != "yes" ]]; then
@@ -73,13 +72,15 @@ ufw allow in on "$LAN_IF" from 0.0.0.0/0 to any port 67 proto udp comment 'DHCP 
 ok "DNS TCP/UDP 53 permitido para a LAN"
 ok "DHCP IPv4 UDP/67 permitido somente pela interface $LAN_IF"
 
-log "Etapa 6/8 - Liberando dashboards administrativos"
+log "Etapa 6/8 - Liberando interfaces web"
 ufw allow from "$LAN_CIDR" to any port 80 proto tcp comment 'AdGuard Web LAN'
 ufw allow from "$LAN_CIDR" to any port 3001 proto tcp comment 'Uptime Kuma LAN'
+ufw allow from "$LAN_CIDR" to any port 8080 proto tcp comment 'HomeLab Web LAN'
 ufw allow from "$LAN_CIDR" to any port 8090 proto tcp comment 'Beszel LAN'
 ufw allow from "$LAN_CIDR" to any port 9443 proto tcp comment 'Portainer LAN'
 ok "AdGuard Web TCP/80"
 ok "Uptime Kuma TCP/3001"
+ok "HomeLab Web TCP/8080"
 ok "Beszel TCP/8090"
 ok "Portainer TCP/9443"
 
@@ -100,11 +101,10 @@ echo
 ufw status numbered
 echo
 ufw status verbose
-
 ok "UFW ativado."
 
 log "Sockets importantes atualmente em escuta"
-ss -lntup | grep -E '(:22|:53|:67|:80|:3001|:8090|:9443|:5335)\b' || true
+ss -lntup | grep -E '(:22|:53|:67|:80|:3001|:8080|:8090|:9443|:5335)\b' || true
 
 cat <<'EOT'
 
@@ -117,49 +117,24 @@ O prompt deve ser parecido com:
 
   PS C:\Users\Leonardo>
 
-NÃO execute ssh antes dos Test-NetConnection; esses comandos são do Windows PowerShell.
-
 Teste:
 
   Test-NetConnection 192.168.100.2 -Port 22
   Test-NetConnection 192.168.100.2 -Port 80
   Test-NetConnection 192.168.100.2 -Port 3001
+  Test-NetConnection 192.168.100.2 -Port 8080
   Test-NetConnection 192.168.100.2 -Port 8090
   Test-NetConnection 192.168.100.2 -Port 9443
 
-Depois valide uma NOVA sessão SSH:
+Portal HomeLab:
+  http://192.168.100.2:8080
 
-  ssh leonardo@192.168.100.2
-
-Saia dessa nova sessão com:
-
-  exit
-
-De volta ao Windows PowerShell, valide DNS:
-
-  nslookup ubuntu.com
-  nslookup doubleclick.net
-
-Esperado:
-  DNS Server       : 192.168.100.2
-  ubuntu.com       : resolução normal
-  doubleclick.net  : 0.0.0.0 e/ou ::
-
-Por fim, teste DHCP no Windows PowerShell:
-
-  ipconfig /release
-  ipconfig /renew
-  ipconfig /all
-
-Esperado no Wi-Fi:
-  DHCP Server : 192.168.100.2
-  Gateway     : 192.168.100.1
-  DNS         : 192.168.100.2
+Depois valide nova conexão SSH, DNS e DHCP conforme docs/11-UFW.md.
 
 Observação:
 - A porta 3000 do AdGuard NÃO é liberada.
 - A porta 68 UDP NÃO é liberada como serviço.
-- UDP/67 é somente DHCPv4; DHCPv6 usa outras portas e não é fornecido pelo AdGuard neste projeto.
+- UDP/67 é somente DHCPv4.
 - O Unbound 5335 permanece somente em 127.0.0.1.
 - Beszel Agent NÃO expõe a porta 45876.
 ============================================================
