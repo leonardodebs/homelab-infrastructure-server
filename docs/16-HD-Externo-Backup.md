@@ -1,46 +1,157 @@
-# 16 — HD externo dedicado ao backup
+# 16 — Mídia USB dedicada ao backup
 
-Este capítulo adiciona um **HD externo Seagate de 1 TB**, conectado por USB, exclusivamente para proteger o HomeLab. Ele não será usado para arquivos dos notebooks, compartilhamento Samba ou armazenamento pessoal.
+Este capítulo documenta a mídia removível usada para proteger o HomeLab com Restic.
 
-## Arquitetura final
+## Mídia atual validada
+
+A implantação atual usa um **pendrive USB de 128 GB nominais / 117,19 GiB utilizáveis**, identificado pelo Linux como:
 
 ```text
-SATA Flash interno de 32 GB — produção
+/dev/sdb
+Vendor: VendorCo
+Model: ProductCode
+Serial: 4312707004457490
+TRAN: usb
+RM: 1
+```
+
+Antes de ser usado como backup, a capacidade física foi validada com F3:
+
+```bash
+sudo f3probe --destructive --time-ops /dev/sdb
+```
+
+Resultado observado:
+
+```text
+Good news: The device `/dev/sdb' is the real thing
+Usable size:    117.19 GB
+Announced size: 117.19 GB
+Module:         128.00 GB
+```
+
+O HD externo de 1 TB permanece como opção futura; ele não é necessário para a capacidade atual do HomeLab.
+
+## Arquitetura atual
+
+```text
+SATA Flash interno 32 GB — produção
 ├── Ubuntu Server
 ├── Docker e imagens
 ├── AdGuard Home
 ├── Portainer
 ├── Uptime Kuma
+├── Beszel
+├── Diun
+├── HomeLab Web
 └── Unbound
 
-HD externo de 1 TB — recuperação
-├── /srv/backup/restic
-├── /srv/backup/restore-tests
-└── /srv/backup/status
+Pendrive USB 128 GB — backup
+└── /srv/backup
+    ├── restic
+    ├── restore-tests
+    └── status
 ```
 
-O sistema e os serviços continuam no armazenamento interno. O HD externo guarda snapshots criptografados e incrementais do HomeLab.
+## Preparação concluída
 
-O upgrade futuro para SSD de 120 GB não muda o papel do HD externo: ele continuará dedicado a backup, verificação e recuperação.
+O dispositivo foi preparado pelo script:
 
-## Componentes da stack
+```bash
+sudo bash scripts/prepare-backup-disk.sh /dev/sdb
+```
 
-| Componente | Função |
-|---|---|
-| ext4 | Sistema de arquivos Linux do HD externo |
-| `/etc/fstab` | Montagem automática por UUID |
-| Restic | Backup incremental, deduplicado e criptografado |
-| systemd timers | Agendamento diário, semanal e mensal |
-| smartmontools | Leitura da saúde SMART, quando suportada pela ponte USB |
-| `flock` | Impede duas rotinas Restic simultâneas |
+Estado validado:
 
-## Política adotada
+```text
+/dev/sdb1
+FSTYPE: ext4
+LABEL:  HOMELAB_BACKUP
+MOUNT:  /srv/backup
+SIZE:   ~115G
+AVAIL:  ~114G
+```
+
+UUID atual:
+
+```text
+118e7038-9c56-4ba4-a593-103dc58871af
+```
+
+Entrada criada no `/etc/fstab`:
+
+```fstab
+UUID=118e7038-9c56-4ba4-a593-103dc58871af /srv/backup ext4 defaults,nofail,x-systemd.automount,x-systemd.device-timeout=10s 0 2
+```
+
+Validações executadas com sucesso:
+
+```bash
+findmnt /srv/backup
+lsblk -o NAME,SIZE,FSTYPE,LABEL,MOUNTPOINTS,TRAN
+df -h /srv/backup
+sudo mount -a
+sudo ls -lah /srv/backup
+```
+
+Diretórios esperados:
+
+```text
+/srv/backup/restic
+/srv/backup/restore-tests
+/srv/backup/status
+```
+
+## Stack de backup
+
+A stack usa:
+
+- ext4;
+- Restic com criptografia, deduplicação e snapshots incrementais;
+- systemd timers;
+- `flock` para impedir operações simultâneas;
+- verificação periódica do repositório;
+- SMART quando a mídia expõe essa funcionalidade.
+
+Pendrives USB normalmente não fornecem SMART. A ausência de SMART não é tratada como falha da rotina; a manutenção continua e registra apenas um aviso.
+
+## Dados protegidos
+
+O backup cobre atualmente:
+
+- repositório e arquivos Compose do HomeLab;
+- `/etc/fstab`;
+- Netplan;
+- Unbound;
+- Docker daemon config;
+- UFW e `/etc/default/ufw`;
+- units do systemd;
+- MOTD customizado do HomeLab;
+- configuração da rotina de backup, exceto a senha;
+- volumes do Portainer;
+- volumes do AdGuard Home;
+- volume do Uptime Kuma;
+- volumes do Beszel Hub e Agent;
+- volume do Diun.
+
+O HomeLab Web é estático e já está incluído no próprio repositório do projeto.
+
+Não são incluídos:
+
+- imagens e layers recriáveis do Docker;
+- caches e logs temporários;
+- o próprio `/srv/backup`;
+- `/etc/homelab-backup/restic-password`.
+
+> A senha do Restic deve ser guardada fora do servidor. Sem ela, os snapshots não podem ser restaurados.
+
+## Política
 
 | Rotina | Horário | Ação |
 |---|---:|---|
-| Backup diário | 03:15 | Cria snapshot criptografado |
-| Manutenção semanal | domingo, 04:30 | Retenção, prune, check de 10% e SMART |
-| Teste de restauração | dia 1, 05:30 | Restaura o snapshot mais recente em pasta isolada |
+| Backup | diariamente às 03:15 | snapshot criptografado e incremental |
+| Manutenção | domingo às 04:30 | retenção, prune, check de 10% e tentativa de SMART |
+| Restore test | dia 1 às 05:30 | restauração do snapshot mais recente em diretório isolado |
 
 Retenção:
 
@@ -49,159 +160,17 @@ Retenção:
 - 12 mensais;
 - 2 anuais.
 
-## Dados protegidos
+## Instalar Restic e timers
 
-- repositório e arquivos Compose do HomeLab;
-- configuração do Netplan;
-- configuração do Unbound;
-- configuração do Docker;
-- regras do UFW;
-- volumes do Portainer;
-- volumes do AdGuard Home;
-- volume do Uptime Kuma;
-- arquivos de configuração da própria rotina de backup, exceto a senha.
-
-Não são incluídos:
-
-- imagens e camadas recriáveis do Docker;
-- logs temporários;
-- caches;
-- o próprio diretório `/srv/backup`;
-- o arquivo `/etc/homelab-backup/restic-password`.
-
-> A senha do Restic precisa ser guardada fora do servidor. Sem ela, os snapshots criptografados não podem ser restaurados.
-
----
-
-## 1. Identificar o HD correto
-
-Conecte o HD e execute:
+Com `/srv/backup` montado:
 
 ```bash
-lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINT,MODEL,SERIAL,TRAN
+sudo bash scripts/install-backup-stack.sh
 ```
 
-Exemplo esperado com o hardware atual:
+Durante a instalação será solicitada uma senha Restic com pelo menos 16 caracteres.
 
-```text
-sda      ~29.8G disk                         SATA Flash interno
-└─sda1   ...    part ext4                    /
-sdb     ~931.5G disk                         Seagate USB
-└─sdb1   ...    part                         ...
-```
-
-O nome pode ser diferente. Confirme pelo **modelo, capacidade, serial e coluna `TRAN`**.
-
-### Aviso crítico
-
-O próximo procedimento apaga completamente o disco informado. Não execute usando apenas um nome copiado do exemplo.
-
----
-
-## 2. Preparar e montar o HD
-
-O script possui proteções contra apagar o disco do sistema, exige o disco inteiro e solicita uma confirmação textual.
-
-```bash
-cd ~/homelab-infrastructure-server
-chmod +x scripts/*.sh
-sudo ./scripts/prepare-backup-disk.sh /dev/sdX
-```
-
-Substitua `/dev/sdX` pelo disco confirmado no passo anterior.
-
-O script:
-
-1. verifica se o dispositivo existe e é um disco;
-2. recusa o disco que contém `/`;
-3. recusa discos com partições montadas;
-4. mostra modelo, capacidade e serial;
-5. cria tabela GPT e uma partição ext4;
-6. cria o label `HOMELAB_BACKUP`;
-7. adiciona montagem por UUID em `/etc/fstab`;
-8. monta em `/srv/backup`;
-9. cria os diretórios da stack.
-
-A entrada gerada no `fstab` segue este modelo:
-
-```fstab
-UUID=UUID_REAL /srv/backup ext4 defaults,nofail,x-systemd.automount,x-systemd.device-timeout=10s 0 2
-```
-
-`nofail` permite que o Ubuntu inicialize mesmo se o HD estiver desconectado. `x-systemd.automount` monta o volume quando o caminho é acessado.
-
-Valide:
-
-```bash
-findmnt /srv/backup
-lsblk -f
-df -h /srv/backup
-sudo mount -a
-```
-
-O último comando não deve produzir erros.
-
----
-
-## 3. Verificar a saúde do disco
-
-Instale a stack no passo seguinte ou instale temporariamente o pacote:
-
-```bash
-sudo apt update
-sudo apt install -y smartmontools
-```
-
-Depois execute:
-
-```bash
-sudo ./scripts/smart-check.sh
-```
-
-Algumas pontes USB não repassam os comandos SMART. O script tenta o modo padrão e depois o protocolo SAT. Falha de leitura SMART não significa automaticamente que o HD está ruim, mas desconexões, erros de I/O ou ruídos mecânicos exigem investigação.
-
-Consulte o kernel:
-
-```bash
-sudo dmesg -T | grep -Ei 'usb|uas|reset|I/O error|sd[a-z]'
-```
-
----
-
-## 4. Instalar Restic e os timers
-
-Execute:
-
-```bash
-sudo ./scripts/install-backup-stack.sh
-```
-
-Durante a instalação será solicitada uma senha Restic com pelo menos 16 caracteres. Guarde-a em um gerenciador de senhas e, preferencialmente, em uma cópia offline.
-
-O instalador cria:
-
-```text
-/etc/homelab-backup/
-├── restic.env
-├── restic-password
-└── excludes.txt
-
-/usr/local/sbin/
-├── homelab-restic-backup
-├── homelab-restic-maintenance
-├── homelab-restic-restore-test
-└── homelab-smart-check
-```
-
-Também instala e habilita:
-
-```text
-homelab-backup.timer
-homelab-backup-maintenance.timer
-homelab-restore-test.timer
-```
-
-Confirme:
+Depois valide:
 
 ```bash
 systemctl list-timers 'homelab-*' --no-pager
@@ -210,18 +179,16 @@ sudo systemctl status homelab-backup-maintenance.timer
 sudo systemctl status homelab-restore-test.timer
 ```
 
----
-
-## 5. Executar o primeiro backup
+## Primeiro backup
 
 ```bash
 sudo systemctl start homelab-backup.service
 sudo journalctl -u homelab-backup.service -f
 ```
 
-Durante o backup, os containers `adguardhome`, `portainer` e `uptime-kuma` são pausados brevemente para produzir uma cópia consistente dos volumes. O script reinicia apenas os containers que estavam ativos, inclusive quando ocorre erro.
+A rotina interrompe brevemente containers com dados persistentes para produzir uma cópia consistente e os reinicia automaticamente ao final, inclusive em caso de erro.
 
-Ao concluir, valide:
+Valide:
 
 ```bash
 sudo cat /srv/backup/status/last-success.txt
@@ -229,148 +196,35 @@ sudo bash -c 'source /etc/homelab-backup/restic.env; restic snapshots'
 sudo bash -c 'source /etc/homelab-backup/restic.env; restic stats --mode restore-size'
 ```
 
-O backup é cancelado quando `/srv/backup` não está montado. Essa proteção impede que o processo grave acidentalmente os snapshots no SATA Flash interno de 32 GB.
+O backup é cancelado se `/srv/backup` não estiver realmente montado, evitando gravação acidental no armazenamento interno.
 
----
-
-## 6. Testar restauração
-
-Execute manualmente o teste automatizado:
+## Teste de restauração
 
 ```bash
 sudo systemctl start homelab-restore-test.service
 sudo journalctl -u homelab-restore-test.service --no-pager -n 100
 ```
 
-O resultado será salvo em:
+Os testes ficam em:
 
 ```text
-/srv/backup/restore-tests/AAAAMMDD-HHMMSS/
+/srv/backup/restore-tests/
 ```
 
-Verifique:
+## Remoção segura da mídia
 
-```bash
-sudo find /srv/backup/restore-tests -maxdepth 2 -name RESTORE_TEST_OK.txt -print -exec cat {} \;
-```
-
-Para restaurar um snapshot manualmente em uma pasta isolada:
-
-```bash
-sudo ./scripts/restore.sh latest
-```
-
-O script não substitui dados ativos. Ele restaura em `/srv/backup/manual-restore/` para revisão antes de qualquer recuperação real.
-
----
-
-## 7. Executar manutenção
-
-```bash
-sudo systemctl start homelab-backup-maintenance.service
-sudo journalctl -u homelab-backup-maintenance.service --no-pager -n 200
-```
-
-Essa rotina:
-
-1. aplica a retenção;
-2. executa `prune` para liberar blocos sem referência;
-3. valida metadados e 10% dos pacotes;
-4. tenta ler o SMART;
-5. exibe espaço e tamanho restaurável.
-
-Uma verificação completa pode ser executada ocasionalmente:
-
-```bash
-sudo bash -c 'source /etc/homelab-backup/restic.env; restic check --read-data'
-```
-
-Como lê todo o repositório, ela pode levar bastante tempo no Celeron N2807 e no USB.
-
----
-
-## 8. Monitorar diariamente
-
-```bash
-./scripts/healthcheck.sh
-systemctl --failed
-journalctl -p err..alert --since today
-```
-
-Comandos específicos:
-
-```bash
-findmnt /srv/backup
-df -h /srv/backup
-sudo cat /srv/backup/status/last-success.txt
-sudo journalctl -u homelab-backup.service --since '2 days ago'
-```
-
-Sinais de problema:
-
-- `/srv/backup` ausente;
-- mensagens `I/O error`, `USB disconnect` ou `reset SuperSpeed USB device`;
-- timer sem execução recente;
-- ausência do arquivo `last-success.txt` atualizado;
-- `restic check` com erros;
-- setores pendentes ou não corrigíveis no SMART.
-
----
-
-## 9. Trocar ou desconectar o HD
-
-Pare as rotinas:
+Antes de retirar o pendrive:
 
 ```bash
 sudo systemctl stop homelab-backup.timer
 sudo systemctl stop homelab-backup-maintenance.timer
 sudo systemctl stop homelab-restore-test.timer
-```
-
-Verifique se não há operação ativa:
-
-```bash
-systemctl is-active homelab-backup.service
-systemctl is-active homelab-backup-maintenance.service
-systemctl is-active homelab-restore-test.service
-```
-
-Desmonte:
-
-```bash
 sudo sync
 sudo umount /srv/backup
 ```
 
-Somente então desconecte o cabo USB.
+## Limitações
 
----
+O pendrive é adequado para o laboratório e para a capacidade atual, mas não substitui uma estratégia 3-2-1. Ele protege contra falhas lógicas, erro de atualização e perda de configuração, porém não protege sozinho contra roubo, incêndio, falha física da própria mídia ou perda da senha Restic.
 
-## 10. Limitações e segurança
-
-Este HD protege contra:
-
-- erro de atualização;
-- corrupção de configuração;
-- exclusão acidental;
-- falha lógica de um volume Docker;
-- reinstalação ou troca do armazenamento interno.
-
-Ele não protege sozinho contra:
-
-- roubo;
-- incêndio;
-- descarga elétrica que atinja o Wyse e o HD;
-- falha física do próprio HD;
-- perda da senha Restic.
-
-O HD e o Wyse devem ficar no nobreak. Para uma estratégia 3-2-1 completa, mantenha futuramente uma segunda cópia criptografada fora do equipamento.
-
-## Referências oficiais
-
-- Restic — preparação do repositório: https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html
-- Restic — backup: https://restic.readthedocs.io/en/stable/040_backup.html
-- Restic — retenção: https://restic.readthedocs.io/en/stable/060_forget.html
-- Restic — verificação: https://restic.readthedocs.io/en/stable/045_working_with_repos.html
-- systemd.timer: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
-- smartmontools: https://www.smartmontools.org/
+Como evolução futura, o HD externo de 1 TB pode assumir o papel de segunda mídia ou substituir o pendrive como armazenamento principal de backup.
