@@ -211,6 +211,80 @@ Os testes ficam em:
 /srv/backup/restore-tests/
 ```
 
+## Validação real da implantação — 2026-08-11
+
+O primeiro ciclo completo de backup e restauração foi executado manualmente e validado com sucesso.
+
+### Snapshot inicial
+
+```text
+Snapshot: a79a4c33
+Host:     homelab
+Tag:      homelab
+Arquivos: 279
+Tamanho lógico: 5.878 MiB
+```
+
+O repositório Restic ocupou aproximadamente `2,9 MiB` após o primeiro snapshot.
+
+O arquivo de estado registrou:
+
+```text
+status=success
+started_at=2026-08-11T22:59:50-03:00
+finished_at=2026-08-11T23:00:10-03:00
+snapshot=a79a4c33
+repository=/srv/backup/restic
+```
+
+A verificação de integridade foi executada com:
+
+```bash
+sudo bash -c '
+set -a
+source /etc/homelab-backup/restic.env
+set +a
+restic check
+'
+```
+
+Resultado:
+
+```text
+no errors were found
+```
+
+### Restore test
+
+O snapshot `a79a4c33` foi restaurado em:
+
+```text
+/srv/backup/restore-tests/20260811-230507
+```
+
+O Restic informou:
+
+```text
+Summary: Restored 604 files/dirs (5.878 MiB)
+```
+
+O script contabilizou `279` arquivos regulares restaurados e criou a evidência:
+
+```text
+/srv/backup/restore-tests/20260811-230507/RESTORE_TEST_OK.txt
+```
+
+Conteúdo validado:
+
+```text
+status=success
+finished_at=2026-08-11T23:05:12-03:00
+files_restored=279
+snapshot=latest
+```
+
+O serviço `homelab-restore-test.service` terminou com sucesso e os arquivos restaurados foram verificados em diretório isolado, sem sobrescrever o ambiente de produção.
+
 ## Remoção segura da mídia
 
 Antes de retirar o pendrive:
