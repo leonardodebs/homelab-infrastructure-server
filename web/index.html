@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>Leonardo Debs HomeLab</title>
+  <style>
+    :root{--bg:#070b14;--panel:#0e1626;--panel2:#111d31;--line:#22304a;--text:#eaf1ff;--muted:#91a2bd;--accent:#69a7ff;--ok:#62d394;--shadow:0 18px 50px rgba(0,0,0,.28)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 20% 0%,#14233d 0,transparent 34%),var(--bg);color:var(--text);font:15px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    a{color:inherit;text-decoration:none}.wrap{width:min(1120px,calc(100% - 36px));margin:auto}.top{display:flex;align-items:center;justify-content:space-between;padding:26px 0}.brand{font-weight:800;letter-spacing:.08em}.brand span{color:var(--accent)}.pill{padding:8px 12px;border:1px solid #244363;background:#0c1d2e;border-radius:999px;color:#a8d8ff;font-size:13px}.hero{padding:62px 0 34px}.eyebrow{color:var(--accent);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:12px}.hero h1{font-size:clamp(38px,7vw,76px);line-height:1.03;margin:13px 0 18px;max-width:850px}.hero p{color:var(--muted);font-size:18px;max-width:760px;margin:0 0 28px}.actions{display:flex;gap:12px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 17px;border-radius:11px;border:1px solid var(--line);background:var(--panel);font-weight:700}.btn.primary{background:var(--accent);border-color:var(--accent);color:#06101f}.btn:hover{transform:translateY(-1px);filter:brightness(1.08)}
+    .section{padding:34px 0}.section h2{font-size:25px;margin:0 0 18px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{background:linear-gradient(180deg,rgba(17,29,49,.94),rgba(11,18,31,.94));border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}.card h3{margin:4px 0 7px;font-size:18px}.card p{margin:0;color:var(--muted)}.service{display:block;transition:.18s ease}.service:hover{border-color:#3d6da5;transform:translateY(-2px)}.meta{font-size:12px;color:var(--ok);font-weight:700;letter-spacing:.06em;text-transform:uppercase}.specs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.spec strong{display:block;font-size:18px}.spec span{color:var(--muted);font-size:13px}.architecture{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;color:#b9c8dc;background:#080e18;border:1px solid var(--line);border-radius:16px;padding:22px;overflow:auto}.footer{padding:40px 0 58px;color:var(--muted);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;border-top:1px solid #17233a;margin-top:28px}
+    @media(max-width:820px){.grid{grid-template-columns:1fr 1fr}.specs{grid-template-columns:1fr 1fr}}@media(max-width:560px){.grid,.specs{grid-template-columns:1fr}.hero{padding-top:34px}.top{align-items:flex-start}.hero h1{font-size:42px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand">LD<span>/</span>HOMELAB</div>
+      <div class="pill">● ONLINE · 192.168.100.2</div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="eyebrow">Private Infrastructure Lab</div>
+        <h1>HomeLab Infrastructure Server</h1>
+        <p>Servidor doméstico de baixo consumo para DNS recursivo, bloqueio de anúncios, DHCP, observabilidade, gerenciamento de containers, segurança e rotinas de backup.</p>
+        <div class="actions">
+          <a class="btn primary" href="https://github.com/leonardodebs/homelab-infrastructure-server" target="_blank" rel="noopener noreferrer">GitHub do projeto ↗</a>
+          <a class="btn" href="#servicos">Abrir serviços</a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Servidor</h2>
+        <div class="specs">
+          <div class="card spec"><strong>Dell Wyse 3290</strong><span>Hardware</span></div>
+          <div class="card spec"><strong>Celeron N2807</strong><span>CPU</span></div>
+          <div class="card spec"><strong>4 GB DDR3</strong><span>Memória</span></div>
+          <div class="card spec"><strong>Ubuntu Server 24.04 LTS</strong><span>Sistema operacional</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="servicos">
+        <h2>Serviços do HomeLab</h2>
+        <div class="grid">
+          <a class="card service" href="http://192.168.100.2" target="_blank"><div class="meta">DNS + DHCP</div><h3>AdGuard Home</h3><p>Filtragem DNS, bloqueio de anúncios e DHCPv4 da rede.</p></a>
+          <a class="card service" href="http://192.168.100.2:3001" target="_blank"><div class="meta">Availability</div><h3>Uptime Kuma</h3><p>Monitoramento de disponibilidade dos serviços e endpoints.</p></a>
+          <a class="card service" href="http://192.168.100.2:8090" target="_blank"><div class="meta">Observability</div><h3>Beszel</h3><p>CPU, memória, disco, rede, temperatura e containers.</p></a>
+          <a class="card service" href="https://192.168.100.2:9443" target="_blank"><div class="meta">Containers</div><h3>Portainer</h3><p>Administração visual da stack Docker.</p></a>
+          <div class="card"><div class="meta">Recursive DNS</div><h3>Unbound</h3><p>Resolver recursivo e cache local em 127.0.0.1:5335.</p></div>
+          <div class="card"><div class="meta">Image Updates</div><h3>Diun</h3><p>Detecção controlada de novas imagens Docker.</p></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Arquitetura resumida</h2>
+        <div class="architecture">Internet
+   │
+Huawei HG8145V5-V2 · 192.168.100.1
+   │
+   └── Dell Wyse · Ubuntu Server · 192.168.100.2
+       ├── AdGuard Home · DNS / DHCP
+       │   └── Unbound · DNS recursivo / cache
+       ├── Portainer · Docker
+       ├── Uptime Kuma · disponibilidade
+       ├── Beszel · métricas do host e containers
+       ├── Diun · atualização de imagens
+       └── UFW · firewall LAN-only</div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>HomeLab privado · Leonardo Debs</span>
+      <a href="https://github.com/leonardodebs/homelab-infrastructure-server" target="_blank" rel="noopener noreferrer">github.com/leonardodebs/homelab-infrastructure-server ↗</a>
+    </footer>
+  </div>
+</body>
+</html>
