@@ -24,7 +24,7 @@ Depois aplique os serviços da LAN:
 ```bash
 sudo ufw allow from 192.168.100.0/24 to any port 53 proto tcp comment 'DNS TCP LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 53 proto udp comment 'DNS UDP LAN'
-sudo ufw allow in on enxd037454bc6c1 to any port 67 proto udp comment 'DHCP server LAN'
+sudo ufw allow in on enxd037454bc6c1 from 0.0.0.0/0 to any port 67 proto udp comment 'DHCP server LAN IPv4'
 sudo ufw allow from 192.168.100.0/24 to any port 80 proto tcp comment 'AdGuard Web LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 3001 proto tcp comment 'Uptime Kuma LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 8090 proto tcp comment 'Beszel LAN'
@@ -33,7 +33,9 @@ sudo ufw allow from 192.168.100.0/24 to any port 9443 proto tcp comment 'Portain
 
 A porta `3000/tcp` não é necessária depois do setup inicial do AdGuard Home.
 
-A porta `68/udp` também não é aberta como serviço de entrada permanente. O servidor DHCP do AdGuard escuta em UDP/67. A regra de UDP/67 é limitada à interface LAN porque clientes sem lease ainda podem iniciar DHCP usando origem `0.0.0.0`.
+A porta `68/udp` também não é aberta como serviço de entrada permanente. O servidor DHCPv4 do AdGuard escuta em UDP/67. A regra usa origem IPv4 explícita (`0.0.0.0/0`) e é limitada à interface LAN porque clientes sem lease ainda podem iniciar DHCP usando origem `0.0.0.0`.
+
+Não deve existir regra equivalente `67/udp (v6)`: DHCPv6 usa UDP/546 e UDP/547, e o AdGuard não fornece DHCPv6 neste projeto.
 
 O Unbound permanece somente em `127.0.0.1:5335` e não recebe regra de entrada na LAN.
 
@@ -97,7 +99,7 @@ Portas esperadas na LAN:
 22/tcp     SSH
 53/tcp     AdGuard DNS
 53/udp     AdGuard DNS
-67/udp     AdGuard DHCP
+67/udp     AdGuard DHCPv4
 80/tcp     AdGuard Web
 3001/tcp   Uptime Kuma
 8090/tcp   Beszel Hub
@@ -112,6 +114,8 @@ Portas locais esperadas:
 
 ## Verificação de outro dispositivo da LAN
 
+Use um **Windows PowerShell local no notebook**, com prompt semelhante a `PS C:\Users\Leonardo>`. Não entre por SSH antes de executar `Test-NetConnection`, pois esse cmdlet não existe no shell Linux.
+
 ```powershell
 Test-NetConnection 192.168.100.2 -Port 22
 Test-NetConnection 192.168.100.2 -Port 80
@@ -120,13 +124,43 @@ Test-NetConnection 192.168.100.2 -Port 8090
 Test-NetConnection 192.168.100.2 -Port 9443
 ```
 
-Valide também DNS e DHCP depois de ativar o firewall.
+Depois valide nova conexão SSH:
+
+```powershell
+ssh leonardo@192.168.100.2
+```
+
+Saia da sessão com `exit` e, de volta ao PowerShell local, valide DNS:
+
+```powershell
+nslookup ubuntu.com
+nslookup doubleclick.net
+```
+
+O resolver esperado no notebook é `192.168.100.2`. A consulta de `doubleclick.net` deve retornar bloqueio (`0.0.0.0` e/ou `::`).
+
+Por fim, valide DHCP:
+
+```powershell
+ipconfig /release
+ipconfig /renew
+ipconfig /all
+```
+
+No adaptador Wi-Fi, o esperado é:
+
+```text
+DHCP Server : 192.168.100.2
+Gateway     : 192.168.100.1
+DNS         : 192.168.100.2
+```
 
 ## Regras que não devem existir
 
 - liberações administrativas globais como `ufw allow 9443/tcp` sem origem limitada;
 - `ufw allow 3000/tcp` depois do setup do AdGuard;
 - regra LAN para o Unbound `5335`;
+- regra IPv6 em UDP/67 para DHCP;
 - port forwarding no modem;
 - exposição de SSH, Portainer, Uptime Kuma, Beszel ou AdGuard para a Internet;
 - `ufw disable` como solução permanente.
