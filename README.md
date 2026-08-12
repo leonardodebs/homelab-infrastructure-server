@@ -6,15 +6,16 @@ Servidor doméstico de baixo consumo baseado em **Dell Wyse N03D / 3290**, **Ubu
 
 Centralizar no Dell Wyse os serviços essenciais da casa:
 
-- DHCP para distribuição automática de IP, gateway e DNS;
-- DNS com bloqueio de anúncios e rastreadores pelo AdGuard Home;
+- DHCPv4 pelo AdGuard Home;
+- DNS com bloqueio de anúncios e rastreadores;
 - resolução DNS recursiva e cache local com Unbound;
 - gerenciamento de containers pelo Portainer;
 - monitoramento de disponibilidade pelo Uptime Kuma;
-- monitoramento de CPU, memória, disco, rede, temperatura e containers pelo Beszel;
-- verificação controlada de atualizações de imagens com Diun;
-- firewall, backups e manutenção documentada;
-- recuperação local por mídia USB com Restic.
+- métricas de host e containers pelo Beszel;
+- detecção controlada de novas imagens com Diun;
+- portal administrativo interno;
+- firewall UFW;
+- backup criptografado e restore test com Restic.
 
 ## Hardware do projeto
 
@@ -23,96 +24,123 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 | Equipamento | Dell Wyse N03D / 3290 |
 | CPU | Intel Celeron N2807 @ 1.58 GHz |
 | RAM | 4 GB DDR3 / 1333 MT/s |
-| Armazenamento de produção atual | SATA Flash Drive 32 GB |
+| Armazenamento de produção | SATA Flash Drive 32 GB |
 | Upgrade planejado | SSD 120 GB no fim de 2026 |
-| Armazenamento de backup atual | Pendrive USB 128 GB, 117,2 GiB utilizáveis, validado com F3 |
+| Backup atual | Pendrive USB 128 GB, 117,2 GiB utilizáveis, validado com F3 |
 | Rede principal | TP-Link UE300 USB 3.0 Gigabit Ethernet |
-| Recursos extras | HDMI, VGA, USB e Wi-Fi |
-| Sistema atual | Ubuntu Server 24.04.4 LTS amd64 |
-| BIOS observada | Phoenix SecureCore, versão 1.0R (2017-12-22) |
+| Sistema | Ubuntu Server 24.04.4 LTS amd64 |
+| Hostname | `homelab` |
+| BIOS observada | Phoenix SecureCore 1.0R (2017-12-22) |
 
-## Endereçamento adotado
+Identificadores únicos de hardware, MAC addresses, tokens, hashes e senhas não devem ser publicados no repositório.
 
-| Item | Valor de referência |
+## Endereçamento
+
+| Item | Valor |
 |---|---|
 | Rede | `192.168.100.0/24` |
-| Modem/gateway | `192.168.100.1` |
-| Dell Wyse | `192.168.100.2` |
+| Gateway Huawei | `192.168.100.1` |
+| HomeLab | `192.168.100.2` |
 | Pool DHCP | `192.168.100.50` a `192.168.100.200` |
 | Domínio local | `home.arpa` |
+| Unbound | `127.0.0.1:5335` |
+
+## Serviços atuais
+
+| Serviço | Função | Acesso |
+|---|---|---|
+| AdGuard Home | DNS + DHCPv4 | `http://192.168.100.2` |
+| Unbound | DNS recursivo/cache | `127.0.0.1:5335` |
+| Portainer | Gerência Docker | `https://192.168.100.2:9443` |
+| Uptime Kuma | Disponibilidade | `http://192.168.100.2:3001` |
+| Beszel | Métricas | `http://192.168.100.2:8090` |
+| Beszel Agent | Coleta local | WebSocket-only |
+| Diun | Notificação de imagens | sem porta publicada |
+| HomeLab Web | Portal interno | `http://192.168.100.2:8080` |
+| Restic | Backup/restore | `/srv/backup` |
 
 ## Arquitetura
 
 ```mermaid
 flowchart TD
     Internet --> Modem[Huawei HG8145V5-V2\nNAT + Wi-Fi\nDHCP desativado]
-    Modem --> Wyse[Dell Wyse\nUbuntu Server\n192.168.100.2]
-    Wyse --> AGH[AdGuard Home\nDNS + DHCP]
+    Modem --> Wyse[Dell Wyse\nhomelab\n192.168.100.2]
+    Modem --> Clientes[Notebooks, celulares, TVs]
+    Clientes --> AGH[AdGuard Home\nDNS + DHCPv4]
     AGH --> Unbound[Unbound\n127.0.0.1:5335]
     Unbound --> RootDNS[DNS Root/Autoritativos]
-    Wyse --> Portainer
-    Wyse --> Kuma[Uptime Kuma\nDisponibilidade]
-    Wyse --> Beszel[Beszel\nCPU + RAM + Disco + Rede + Docker]
-    Wyse --> Diun[Diun\nImage Update Notifier]
-    Wyse --> SSD[SATA Flash 32 GB\nProdução]
-    Wyse --> USB[Pendrive USB 128 GB\n/srv/backup]
-    USB --> Restic[Restic\nSnapshots criptografados]
-    Restic --> Restore[Testes de restauração]
-    Modem --> Clientes[Notebooks, celulares, TVs e demais clientes]
-    Clientes --> AGH
+    Wyse --> Portainer[Portainer]
+    Wyse --> Kuma[Uptime Kuma]
+    Wyse --> Beszel[Beszel Hub + Agent]
+    Wyse --> Diun[Diun]
+    Wyse --> Portal[HomeLab Web]
+    Wyse --> USB[Mídia USB\n/srv/backup]
+    USB --> Restic[Restic]
+    Restic --> Restore[Restore tests]
 ```
 
-## Decisões técnicas importantes
+## Decisões técnicas
 
-1. O Wyse usa **Ethernet** e IP estático; o Wi-Fi permanece fora da operação principal.
-2. O DHCP do Huawei está desativado e o AdGuard Home entrega DHCPv4 aos clientes.
-3. O AdGuard Home usa `network_mode: host`, necessário para DHCP e identificação real dos clientes.
-4. O Unbound roda como serviço nativo do Ubuntu em `127.0.0.1:5335`.
-5. Uptime Kuma monitora disponibilidade; Beszel monitora recursos e histórico do host/containers.
-6. O Diun apenas detecta novas imagens; atualizações de containers são executadas manualmente após revisão e backup.
-7. Portas administrativas ficam disponíveis somente na rede local e nenhuma porta deve ser encaminhada no modem para a Internet.
-8. O SATA Flash de 32 GB é o ambiente de produção inicial; um pendrive USB de 128 GB, validado com F3, é o destino atual dos snapshots Restic em `/srv/backup`.
-9. O backup é cancelado se `/srv/backup` não estiver montado, evitando gravar acidentalmente no armazenamento interno.
-10. A senha Restic não é armazenada no repositório e precisa ser guardada fora do servidor.
-11. O upgrade para SSD de 120 GB está planejado para o fim de 2026 e será tratado como exercício de disaster recovery/restauração.
+1. O Wyse opera por Ethernet; Wi-Fi não participa da infraestrutura crítica.
+2. O DHCP do Huawei está desativado; o AdGuard fornece DHCPv4.
+3. O AdGuard usa `network_mode: host` e upstream somente no Unbound local.
+4. O Unbound roda nativamente em `127.0.0.1:5335`.
+5. Uptime Kuma monitora disponibilidade; Beszel monitora recursos.
+6. Beszel Agent opera em WebSocket-only com SSH interno desativado.
+7. Diun apenas notifica; containers são atualizados manualmente após backup/revisão.
+8. Interfaces administrativas ficam somente na LAN e não há port forwarding no modem.
+9. UFW bloqueia entrada por padrão e possui regras específicas para LAN e checks Docker -> host.
+10. Restic cancela o backup se `/srv/backup` não estiver montado.
+11. A senha Restic, senhas administrativas, tokens e hashes não são versionados.
+12. O AdGuard está configurado com `auth_attempts: 5` e `block_auth_min: 3`.
+13. O upgrade para SSD de 120 GB será usado como exercício de disaster recovery.
 
-## Ordem de implantação
+## Documentação
 
 1. [Arquitetura](docs/00-Arquitetura.md)
-2. [Hardware e checklist de chegada](docs/01-Hardware.md)
-3. [Instalação do Ubuntu Server](docs/02-Instalacao-Ubuntu.md)
-4. [Configuração inicial e IP estático](docs/03-Configuracao-Inicial.md)
+2. [Hardware](docs/01-Hardware.md)
+3. [Instalação do Ubuntu](docs/02-Instalacao-Ubuntu.md)
+4. [Configuração inicial e IP](docs/03-Configuracao-Inicial.md)
 5. [Docker Engine e Compose](docs/04-Docker.md)
 6. [Portainer](docs/05-Portainer.md)
 7. [AdGuard Home](docs/06-AdGuardHome.md)
 8. [Unbound](docs/07-Unbound.md)
-9. [Migração do DHCP](docs/08-DHCP.md)
+9. [DHCP](docs/08-DHCP.md)
 10. [Uptime Kuma](docs/09-Uptime-Kuma.md)
 11. [Beszel](docs/09-Beszel.md)
 12. [Diun](docs/10-Diun.md)
-13. [Firewall UFW](docs/11-UFW.md)
+13. [UFW](docs/11-UFW.md)
 14. [Backup e restauração](docs/12-Backup.md)
 15. [Manutenção](docs/13-Manutencao.md)
 16. [Troubleshooting](docs/14-Troubleshooting.md)
-17. [Upgrades futuros](docs/15-Upgrade.md)
-18. [Mídia USB externa e stack Restic](docs/16-HD-Externo-Backup.md)
+17. [Upgrades](docs/15-Upgrade.md)
+18. [Mídia USB e Restic](docs/16-HD-Externo-Backup.md)
 
-## Stack de backup externo
+## Backup
 
-| Rotina | Agendamento | Resultado |
-|---|---:|---|
-| Backup Restic | diariamente às 03:15 | snapshot criptografado e incremental |
-| Manutenção | domingo às 04:30 | retenção, prune, check parcial e SMART quando suportado |
-| Restore test | dia 1 às 05:30 | restauração em diretório isolado |
+| Rotina | Agendamento |
+|---|---:|
+| Restic backup | diariamente às 03:15 |
+| Manutenção | domingo às 04:30 |
+| Restore test | dia 1 às 05:30 |
 
-Retenção padrão:
+Retenção:
 
-- 7 snapshots diários;
+- 7 diários;
 - 8 semanais;
 - 12 mensais;
 - 2 anuais.
 
-## Estrutura do repositório
+Primeiro ciclo validado:
+
+```text
+Snapshot       a79a4c33
+Restic check   no errors were found
+Restore        604 files/dirs, 5.878 MiB
+Marker         RESTORE_TEST_OK.txt
+```
+
+## Estrutura principal
 
 ```text
 .
@@ -122,91 +150,69 @@ Retenção padrão:
 │   └── .env.example
 ├── config/
 │   ├── restic/
-│   │   ├── excludes.txt
-│   │   └── restic.env.example
 │   └── unbound/
-│       └── homelab.conf
 ├── docs/
 ├── scripts/
-│   ├── bootstrap-host.sh
-│   ├── install-docker.sh
-│   ├── deploy-stack.sh
-│   ├── prepare-backup-disk.sh
-│   ├── install-backup-stack.sh
-│   ├── restic-backup.sh
-│   ├── restic-maintenance.sh
-│   ├── restic-restore-test.sh
-│   ├── smart-check.sh
-│   ├── backup.sh
-│   ├── restore.sh
-│   ├── update-stack.sh
-│   └── healthcheck.sh
-└── systemd/
-    ├── homelab-backup.service
-    ├── homelab-backup.timer
-    ├── homelab-backup-maintenance.service
-    ├── homelab-backup-maintenance.timer
-    ├── homelab-restore-test.service
-    └── homelab-restore-test.timer
+├── systemd/
+└── web/
 ```
 
-## Uso rápido
+`compose/compose.yaml` é o único arquivo Compose oficial da stack. Arquivos Compose legados não devem ser mantidos em paralelo.
 
-Depois de concluir a configuração do Ubuntu e do IP estático:
+## Uso rápido
 
 ```bash
 git clone https://github.com/leonardodebs/homelab-infrastructure-server.git
 cd homelab-infrastructure-server
-chmod +x scripts/*.sh
-sudo ./scripts/bootstrap-host.sh
-./scripts/install-docker.sh
+sudo bash scripts/bootstrap-host.sh
+bash scripts/install-docker.sh
 ```
 
-Copie o arquivo de ambiente e ajuste o IP:
+Crie o arquivo local de ambiente:
 
 ```bash
 cp compose/.env.example compose/.env
 nano compose/.env
 ```
 
-Depois instale o Unbound e suba a stack conforme os capítulos correspondentes.
+Não versione `compose/.env`.
 
-## Instalação da mídia USB de backup
+## Mídia de backup
 
-Depois que os serviços estiverem estáveis:
+Identifique localmente o dispositivo antes de qualquer operação destrutiva:
 
 ```bash
-lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINT,MODEL,SERIAL,TRAN
-sudo ./scripts/prepare-backup-disk.sh /dev/sdX
-sudo ./scripts/install-backup-stack.sh
-sudo systemctl start homelab-backup.service
+lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINT,MODEL,TRAN,RM
 ```
 
-O comando de preparação é destrutivo e exige que o dispositivo correto seja identificado pelo modelo, capacidade, serial e transporte. Consulte o [capítulo 16](docs/16-HD-Externo-Backup.md) antes de executar.
+Depois consulte `docs/16-HD-Externo-Backup.md`.
 
 ## Estado do projeto
 
-- [x] Arquitetura definida
-- [x] Documentação inicial
+- [x] Arquitetura definida e revisada
 - [x] Hardware recebido e validado
 - [x] Ubuntu Server 24.04.4 LTS instalado
+- [x] Hostname `homelab`
 - [x] IP estático `192.168.100.2`
 - [x] Docker Engine e Compose instalados
-- [x] Portainer instalado e validado
-- [x] Unbound instalado e validado
-- [x] AdGuard Home instalado e validado
-- [x] DHCP migrado do Huawei para o AdGuard Home
-- [x] DNS dos clientes apontando para `192.168.100.2`
-- [x] Bloqueio de anúncios validado
-- [x] Uptime Kuma instalado e monitores iniciais configurados
-- [x] Diun instalado e validado
-- [x] Beszel Hub instalado e saudável
-- [x] Beszel Agent conectado e métricas do host validadas
-- [x] Firewall UFW aplicado e validado
-- [x] Pendrive USB 128 GB validado com F3, formatado em ext4 e montado em `/srv/backup`
-- [x] Stack Restic instalada, timers ativos e primeiro snapshot criado com sucesso
-- [x] Restore test validado com restauração isolada do snapshot e `restic check` sem erros
-- [ ] Evidências e capturas de tela da implantação
+- [x] Portainer instalado
+- [x] Unbound validado
+- [x] AdGuard Home validado
+- [x] DHCP migrado para o AdGuard
+- [x] DNS/bloqueio validado nos clientes
+- [x] Uptime Kuma com monitores validados
+- [x] Beszel Hub + Agent validados
+- [x] Diun validado
+- [x] HomeLab Web operacional
+- [x] UFW aplicado e validado
+- [x] Mídia USB 128 GB validada com F3 e ext4
+- [x] Restic e timers ativos
+- [x] Primeiro snapshot e `restic check` validados
+- [x] Restore test validado
+- [x] Documentação técnica revisada para refletir a implantação real
+- [ ] SSH por chave + desativação de senha após validação
+- [ ] Auditoria final do `unattended-upgrades`
+- [ ] Evidências/capturas de tela para portfólio
 - [ ] Upgrade futuro para SSD de 120 GB
 
 ## Referências oficiais
@@ -219,7 +225,6 @@ O comando de preparação é destrutivo e exige que o dispositivo correto seja i
 - Uptime Kuma: https://github.com/louislam/uptime-kuma
 - Beszel: https://beszel.dev/
 - Diun: https://crazymax.dev/diun/
-- OISD: https://oisd.nl/setup/adguardhome
 - Restic: https://restic.readthedocs.io/en/stable/
 - systemd.timer: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
 - smartmontools: https://www.smartmontools.org/
