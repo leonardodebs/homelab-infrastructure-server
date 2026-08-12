@@ -1,122 +1,180 @@
 # 06 — AdGuard Home
 
-O AdGuard Home será executado em modo `host` para usar DNS, DHCP e identificar corretamente os clientes.
+O AdGuard Home roda em `network_mode: host` para fornecer DNS, DHCPv4 e identificação real dos clientes da LAN.
 
-## Pré-requisitos
+## Estado atual
 
-- IP estático do Wyse configurado;
-- Unbound instalado e respondendo em `127.0.0.1:5335`;
-- endereço `192.168.100.2:53` disponível;
-- DHCP do modem ainda ativo durante os testes iniciais.
-
-## Verificar a porta 53
-
-```bash
-sudo ss -lntup | grep ':53 '
+```text
+Web       : http://192.168.100.2
+DNS       : 192.168.100.2:53 TCP/UDP
+DHCPv4    : UDP/67
+Upstream  : 127.0.0.1:5335
+Domínio   : home.arpa
 ```
 
-O Ubuntu pode manter o stub do `systemd-resolved` em `127.0.0.53:53`. Para evitar conflito, configure o AdGuard para escutar DNS **somente no IP Ethernet do servidor**, `192.168.100.2`, e não em `0.0.0.0`/todas as interfaces.
+O DHCP do Huawei está desativado e o AdGuard Home é o servidor DHCPv4 da rede.
 
-## Subir o container
+## Subir/validar o container
 
 ```bash
 cd ~/homelab-infrastructure-server
 docker compose --env-file compose/.env -f compose/compose.yaml up -d adguardhome
+
+docker ps --filter name=adguardhome
+docker logs --tail 100 adguardhome
+sudo ss -lntup | grep -E '(:53|:67|:80)\b'
 ```
 
-Acesse a configuração inicial:
-
-```text
-http://192.168.100.2:3000
-```
-
-## Assistente inicial
-
-Use:
-
-- interface administrativa: `192.168.100.2`;
-- porta administrativa final: `80` ou outra porta livre;
-- servidor DNS: `192.168.100.2`, porta `53`;
-- usuário e senha exclusivos.
-
-Não selecione todas as interfaces para o DNS, pois isso pode disputar a porta do stub local do Ubuntu.
-
-Após concluir, o painel normalmente ficará em:
-
-```text
-http://192.168.100.2
-```
+O DNS deve escutar em `192.168.100.2:53`. O Unbound permanece somente em `127.0.0.1:5335`.
 
 ## Upstream DNS
 
-Em **Settings > DNS settings**, configure:
+Em **Settings > DNS settings**, o upstream da implantação é:
 
 ```text
 127.0.0.1:5335
 ```
 
-Remova upstreams públicos para garantir que as consultas permitidas usem o Unbound.
+Upstreams públicos não são usados como fallback no desenho atual. Isso garante o fluxo:
 
-Bootstrap DNS pode permanecer vazio quando o upstream é um endereço IP local.
-
-## Testar DNS antes de alterar DHCP
-
-No próprio servidor:
-
-```bash
-dig @127.0.0.1 -p 5335 google.com
-dig @192.168.100.2 google.com
+```text
+Cliente -> AdGuard Home -> Unbound -> DNS raiz/autoritativos
 ```
 
-No notebook, configure temporariamente o DNS manual como `192.168.100.2` e teste:
+## Testes DNS
+
+No servidor:
+
+```bash
+dig @127.0.0.1 -p 5335 ubuntu.com
+dig @192.168.100.2 ubuntu.com
+dig @192.168.100.2 doubleclick.net
+```
+
+No Windows:
 
 ```powershell
-nslookup google.com 192.168.100.2
+nslookup ubuntu.com 192.168.100.2
 nslookup doubleclick.net 192.168.100.2
 ```
 
-## Listas de bloqueio
+O domínio comum deve resolver normalmente. Um domínio bloqueado pode retornar `0.0.0.0`, `::` ou outra resposta de bloqueio conforme a configuração do AdGuard.
 
-Comece de forma conservadora para evitar falsos positivos.
+## Clientes e DHCP
 
-Sugestão inicial:
+O AdGuard identifica clientes usando leases DHCP/hostnames e registra as consultas no Query Log.
 
-- AdGuard DNS filter, já disponível no painel;
-- OISD Small ou OISD Big conforme necessidade;
-- uma lista de malware reconhecida.
+Configuração atual de referência:
 
-Evite empilhar várias listas que contêm os mesmos domínios. Monitore o Query Log e crie allowlists somente quando houver evidência de quebra.
-
-## Clientes
-
-Cadastre clientes por IP reservado ou MAC quando possível:
-
-- notebook pessoal;
-- notebook de trabalho;
-- celulares;
-- Smart TVs;
-- outros dispositivos relevantes.
-
-## Regras importantes
-
-- não exponha o painel à Internet;
-- não ative DHCP antes do capítulo 08;
-- faça backup do volume antes de atualizar o container;
-- mantenha o AdGuard fora das atualizações automáticas do Watchtower.
-
-## Validação
-
-```bash
-docker ps --filter name=adguardhome
-docker logs --tail 100 adguardhome
-sudo ss -lntup | grep -E ':53 |:80 |:3000 '
-dig @192.168.100.2 cloudflare.com
+```text
+Gateway       : 192.168.100.1
+Pool DHCPv4   : 192.168.100.50 - 192.168.100.200
+Lease         : 86400 segundos
+DNS entregue  : 192.168.100.2
+Domínio local : home.arpa
+DHCPv6        : desativado
 ```
 
-O resultado de `ss` deve mostrar o DNS em `192.168.100.2:53`, não em `0.0.0.0:53`.
+Consulte `docs/08-DHCP.md` para o procedimento completo.
 
-- [ ] painel acessível somente na LAN;
-- [ ] consultas aparecem no Query Log;
-- [ ] upstream aponta para `127.0.0.1:5335`;
-- [ ] domínio de anúncio é bloqueado;
-- [ ] domínio comum resolve normalmente.
+## Listas de bloqueio
+
+Use abordagem conservadora:
+
+- filtros nativos/AdGuard DNS filter;
+- OISD conforme necessidade;
+- listas de malware somente quando houver justificativa;
+- Query Log para investigação de falsos positivos;
+- allowlists pontuais em vez de desativar filtragem globalmente.
+
+Evite empilhar várias listas altamente sobrepostas.
+
+## Autenticação administrativa
+
+A conta administrativa atual usa o usuário:
+
+```text
+leonardo
+```
+
+A senha não é documentada nem versionada.
+
+Parâmetros de proteção atuais:
+
+```yaml
+auth_attempts: 5
+block_auth_min: 3
+```
+
+Portanto, após tentativas inválidas suficientes, o login web é bloqueado temporariamente por 3 minutos.
+
+Erros observados:
+
+```text
+403 invalid username or password
+429 auth: blocked for ...
+```
+
+Isso afeta somente o painel administrativo; DNS e DHCP continuam operando.
+
+### Trocar a senha com segurança
+
+A senha é armazenada como hash bcrypt em `AdGuardHome.yaml`. Nunca publique o hash nem a senha.
+
+1. Instale a ferramenta local, se necessário:
+
+```bash
+sudo apt install -y apache2-utils
+```
+
+2. Gere um novo hash sem colocar a senha no histórico:
+
+```bash
+HASH="$(htpasswd -B -C 10 -n leonardo | cut -d: -f2-)"
+```
+
+3. Descubra o volume de configuração:
+
+```bash
+CONF_DIR="$(docker volume inspect -f '{{.Mountpoint}}' homelab_adguard_conf)"
+CFG="$CONF_DIR/AdGuardHome.yaml"
+```
+
+4. Pare o AdGuard e faça backup do YAML:
+
+```bash
+docker stop adguardhome
+sudo cp -a "$CFG" "$CFG.bak-$(date +%Y%m%d-%H%M%S)"
+```
+
+5. Substitua somente o hash do usuário e, se necessário, os parâmetros de autenticação. Faça a edição com o serviço parado.
+
+6. Inicie novamente:
+
+```bash
+docker start adguardhome
+unset HASH
+```
+
+7. Valide o login uma única vez e evite tentativas repetidas se houver erro.
+
+## Segurança
+
+- painel somente na LAN;
+- nenhuma porta do AdGuard encaminhada no modem;
+- usuário e senha exclusivos;
+- hash/senha nunca versionados;
+- configuração persistente incluída no Restic;
+- atualizações notificadas pelo Diun e aplicadas manualmente após backup.
+
+## Validação concluída
+
+- [x] painel acessível na LAN;
+- [x] DNS em `192.168.100.2:53`;
+- [x] consultas aparecem no Query Log;
+- [x] upstream somente `127.0.0.1:5335`;
+- [x] domínio de anúncio bloqueado;
+- [x] domínio comum resolve normalmente;
+- [x] DHCPv4 ativo no AdGuard;
+- [x] login administrativo validado após redefinição de senha;
+- [x] `auth_attempts: 5` e `block_auth_min: 3` aplicados.
