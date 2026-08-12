@@ -87,6 +87,25 @@ services:
     labels:
       - diun.enable=true
 
+  homelab-web:
+    image: nginx:alpine
+    container_name: homelab-web
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "${SERVER_IP}:8080:80"
+    volumes:
+      - ../web:/usr/share/nginx/html:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - diun.enable=true
+
   diun:
     image: crazymax/diun:latest
     container_name: diun
