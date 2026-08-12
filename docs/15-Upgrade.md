@@ -2,19 +2,19 @@
 
 ## Prioridade 1 — SSD de 120 GB no fim de 2026
 
-O armazenamento atual validado na BIOS é um **SATA Flash Drive de 32 GB**. Ele será usado para colocar o HomeLab em produção agora.
+O armazenamento de produção atual é um **SATA Flash Drive de 32 GB**. A stack funciona nesse espaço, mas deve permanecer enxuta.
 
-O upgrade planejado para o fim de 2026 é substituir esse armazenamento por um **SSD de 120 GB**.
+O upgrade planejado é substituir o armazenamento interno por um **SSD de 120 GB**.
 
 Benefícios:
 
 - mais margem para atualizações do Ubuntu;
 - maior folga para imagens e volumes Docker;
-- maior retenção de logs sem pressionar o disco;
-- possibilidade de adicionar containers leves;
+- mais tolerância a crescimento de logs;
+- possibilidade de adicionar containers leves sem pressionar o sistema;
 - menor risco de indisponibilidade por falta de espaço.
 
-Até a troca, mantenha o ambiente enxuto e monitore:
+Até a troca:
 
 ```bash
 df -h /
@@ -22,85 +22,110 @@ docker system df
 journalctl --disk-usage
 ```
 
-Mantenha preferencialmente pelo menos 20% do armazenamento interno livre.
+Mantenha preferencialmente pelo menos 20% livre.
 
-### Estratégia recomendada para a troca
+## Estratégia de migração
 
-A preferência é **não clonar** o disco antigo. O upgrade será usado como teste real de recuperação:
+A preferência é **não clonar** o disco antigo. A troca deve funcionar como teste real de disaster recovery:
 
-1. confirmar o último backup Restic no HD externo;
-2. executar e validar um teste de restauração;
-3. registrar Netplan, hostname e usuários;
-4. desligar o servidor com segurança;
-5. substituir o SATA Flash de 32 GB pelo SSD de 120 GB;
-6. instalar Ubuntu Server 24.04 LTS limpo no SSD novo;
-7. clonar este repositório GitHub;
-8. reinstalar Docker, Unbound e a stack;
-9. restaurar configurações e volumes necessários pelo Restic;
-10. executar `scripts/healthcheck.sh` e validar DNS/DHCP antes de considerar a migração concluída.
+1. confirmar snapshot Restic recente em `/srv/backup`;
+2. executar `restic check`;
+3. executar e validar restore test;
+4. registrar hostname, rede e estado da stack;
+5. desligar com segurança;
+6. substituir o SATA Flash pelo SSD;
+7. instalar Ubuntu Server LTS limpo;
+8. configurar hostname `homelab` e IP `192.168.100.2`;
+9. clonar este repositório;
+10. reinstalar Docker e Unbound;
+11. recriar a stack Compose;
+12. restaurar configurações/volumes necessários pelo Restic;
+13. validar DNS, DHCP, UFW, observabilidade e backup.
 
-O SATA Flash antigo deve ser preservado temporariamente sem alterações até o novo ambiente estar totalmente validado, funcionando como rollback físico adicional.
+O SATA Flash antigo deve ser preservado temporariamente como rollback físico.
+
+## Mídia de backup
+
+A mídia operacional atual é um **pendrive USB de 128 GB**, validado com F3 e montado em `/srv/backup`.
+
+Um HD externo de maior capacidade pode ser usado futuramente como:
+
+- segunda cópia local;
+- substituição do pendrive;
+- mídia offline rotacionada.
+
+A capacidade atual do Restic é pequena em relação ao espaço disponível, então não existe necessidade imediata de migrar o backup.
 
 ## Prioridade 2 — memória
 
-Confirme no hardware real se o módulo pode ser substituído e qual é o limite suportado. Não compre memória apenas pela descrição do anúncio.
+Antes de comprar RAM, valide fisicamente:
 
-Com 4 GB, mantenha a stack atual enxuta. Evite:
+- tipo do módulo;
+- limite suportado pela placa;
+- compatibilidade real do equipamento.
 
-- Kubernetes;
-- Prometheus e Grafana completos;
+Com 4 GB, evite no Wyse:
+
+- Kubernetes/k3s de laboratório permanente;
+- Prometheus + Grafana completos;
 - Nextcloud;
-- bancos de dados pesados;
+- bancos pesados;
 - Jellyfin com transcodificação;
 - múltiplas VMs.
 
 ## Prioridade 3 — energia
 
-Para manter DNS e DHCP durante quedas curtas, considere um nobreak pequeno para:
+Para preservar DNS/DHCP durante quedas curtas, um nobreak pode proteger:
 
 - modem/ONT;
 - Dell Wyse;
-- HD externo de backup quando conectado;
+- mídia de backup quando conectada;
 - eventual switch.
 
-Teste a opção de ligar automaticamente após retorno da energia na BIOS.
+Também vale revisar na BIOS a opção de retorno automático após falta de energia, se disponível e confiável.
 
 ## Evolução para dois nós
 
-Quando houver um mini PC mais potente:
+Quando houver hardware mais potente:
 
-### Dell Wyse
+### Dell Wyse — infraestrutura essencial
 
 - AdGuard Home;
 - Unbound;
 - DHCP;
 - Uptime Kuma;
-- serviços essenciais da rede.
+- Beszel;
+- Portainer;
+- Diun;
+- portal interno;
+- backup/rotinas de recuperação.
 
-### Mini PC Core i5 ou superior
+### Segundo mini PC — laboratório
 
-- laboratórios Docker;
 - k3s/Kubernetes;
-- observabilidade;
+- observabilidade mais pesada;
 - bancos de dados;
 - CI/CD;
-- aplicações pessoais.
+- aplicações pessoais;
+- workloads experimentais.
 
-Essa separação mantém os serviços essenciais independentes dos laboratórios.
+Essa separação mantém DNS/DHCP independentes dos laboratórios.
 
-## Melhorias futuras
+## Melhorias futuras opcionais
 
 - segundo DNS para redundância;
-- segunda cópia de backup fora do HomeLab;
-- Nginx Proxy Manager apenas para serviços internos;
-- Tailscale para administração remota autenticada;
-- UPS/NUT para desligamento seguro;
-- monitoramento de temperatura e SMART;
+- segunda cópia criptografada fora do HomeLab;
+- reverse proxy interno para URLs amigáveis;
+- DNS rewrites em `home.arpa`;
+- Tailscale somente se houver necessidade real de administração remota;
+- UPS/NUT;
 - GitHub Actions para validar YAML e shell scripts.
+
+Esses itens não são necessários para considerar o HomeLab atual operacional.
 
 ## Critério para adicionar serviços
 
-Antes de adicionar um container, verifique:
+Antes de instalar qualquer novo container:
 
 ```bash
 free -h
@@ -109,4 +134,12 @@ docker stats --no-stream
 docker system df
 ```
 
-Preserve recursos para DNS e DHCP e evite transformar o Wyse em host de cargas pesadas.
+Pergunte:
+
+1. esse serviço resolve uma necessidade concreta?
+2. duplica algo que já existe?
+3. aumenta o risco para DNS/DHCP?
+4. cabe confortavelmente em 4 GB de RAM e 32 GB de armazenamento?
+5. está incluído na estratégia de backup e monitoramento?
+
+Preserve recursos para os serviços essenciais.
