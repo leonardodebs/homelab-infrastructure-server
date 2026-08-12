@@ -41,6 +41,28 @@ services:
     labels:
       - diun.enable=true
 
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: beszel
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      APP_URL: "http://${SERVER_IP}:8090"
+    ports:
+      - "${SERVER_IP}:8090:8090"
+    volumes:
+      - beszel_data:/beszel_data
+      - beszel_socket:/beszel_socket
+    healthcheck:
+      test: ["CMD", "/beszel", "health", "--url", "http://localhost:8090"]
+      interval: 120s
+      start_period: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - diun.enable=true
+
   diun:
     image: crazymax/diun:latest
     container_name: diun
@@ -76,4 +98,6 @@ volumes:
   adguard_work:
   adguard_conf:
   uptime_kuma_data:
+  beszel_data:
+  beszel_socket:
   diun_data:
