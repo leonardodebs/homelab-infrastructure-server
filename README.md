@@ -11,7 +11,7 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 - resolução DNS recursiva e cache local com Unbound;
 - gerenciamento de containers pelo Portainer;
 - monitoramento pelo Uptime Kuma;
-- verificação controlada de atualizações com Watchtower;
+- verificação controlada de atualizações de imagens com Diun;
 - firewall, backups e manutenção documentada;
 - recuperação local por HD externo com Restic.
 
@@ -25,12 +25,10 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 | Armazenamento de produção atual | SATA Flash Drive 32 GB |
 | Upgrade planejado | SSD 120 GB no fim de 2026 |
 | Armazenamento de backup | HD externo Seagate 1 TB via USB |
-| Rede principal | Ethernet |
+| Rede principal | TP-Link UE300 USB 3.0 Gigabit Ethernet |
 | Recursos extras | HDMI, VGA, USB e Wi-Fi |
-| Sistema alvo | Ubuntu Server 24.04 LTS amd64 |
+| Sistema atual | Ubuntu Server 24.04.4 LTS amd64 |
 | BIOS observada | Phoenix SecureCore, versão 1.0R (2017-12-22) |
-
-> O equipamento chegou com Windows 10 Pro instalado no SATA Flash de 32 GB. O plano atual é apagar o Windows e instalar o Ubuntu Server diretamente nesse disco. O SSD de 120 GB será um upgrade futuro, não um pré-requisito para iniciar o HomeLab.
 
 ## Endereçamento adotado
 
@@ -40,9 +38,7 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 | Modem/gateway | `192.168.100.1` |
 | Dell Wyse | `192.168.100.2` |
 | Pool DHCP | `192.168.100.50` a `192.168.100.200` |
-| Domínio local opcional | `home.arpa` |
-
-Adapte os valores antes da instalação caso a sua rede use outra faixa.
+| Domínio local | `home.arpa` |
 
 ## Arquitetura
 
@@ -55,7 +51,7 @@ flowchart TD
     Unbound --> RootDNS[DNS Root/Autoritativos]
     Wyse --> Portainer
     Wyse --> Kuma[Uptime Kuma]
-    Wyse --> Watchtower
+    Wyse --> Diun[Diun\nImage Update Notifier]
     Wyse --> SSD[SATA Flash 32 GB\nProdução]
     Wyse --> USB[HD Seagate 1 TB\n/srv/backup]
     USB --> Restic[Restic\nSnapshots criptografados]
@@ -66,13 +62,13 @@ flowchart TD
 
 ## Decisões técnicas importantes
 
-1. O Wyse deve usar **Ethernet** e IP estático. O Wi-Fi fica apenas como contingência.
-2. O DHCP do modem só será desligado depois que o AdGuard Home estiver testado.
-3. O AdGuard Home usa `network_mode: host`, requisito recomendado para DHCP e identificação real dos clientes.
+1. O Wyse usa **Ethernet** e IP estático; o Wi-Fi permanece fora da operação principal.
+2. O DHCP do Huawei está desativado e o AdGuard Home entrega DHCPv4 aos clientes.
+3. O AdGuard Home usa `network_mode: host`, necessário para DHCP e identificação real dos clientes.
 4. O Unbound roda como serviço nativo do Ubuntu em `127.0.0.1:5335`.
-5. O Watchtower não atualiza automaticamente o DNS/DHCP. Serviços críticos são atualizados manualmente após backup.
+5. O Diun apenas detecta novas imagens; atualizações de containers são executadas manualmente após revisão e backup.
 6. Portas administrativas ficam disponíveis somente na rede local e nenhuma porta deve ser encaminhada no modem para a Internet.
-7. O SATA Flash de 32 GB é o ambiente de produção inicial; o HD externo de 1 TB é o ambiente de recuperação.
+7. O SATA Flash de 32 GB é o ambiente de produção inicial; o HD externo de 1 TB será o ambiente de recuperação.
 8. O backup é cancelado se `/srv/backup` não estiver montado, evitando gravar acidentalmente no armazenamento interno.
 9. A senha Restic não é armazenada no repositório e precisa ser guardada fora do servidor.
 10. O upgrade para SSD de 120 GB está planejado para o fim de 2026 e será tratado como exercício de disaster recovery/restauração.
@@ -89,7 +85,7 @@ flowchart TD
 8. [Unbound](docs/07-Unbound.md)
 9. [Migração do DHCP](docs/08-DHCP.md)
 10. [Uptime Kuma](docs/09-Uptime-Kuma.md)
-11. [Watchtower](docs/10-Watchtower.md)
+11. [Diun](docs/10-Diun.md)
 12. [Firewall UFW](docs/11-UFW.md)
 13. [Backup e restauração](docs/12-Backup.md)
 14. [Manutenção](docs/13-Manutencao.md)
@@ -169,7 +165,7 @@ cp compose/.env.example compose/.env
 nano compose/.env
 ```
 
-Depois instale o Unbound e suba a stack conforme os capítulos 7 e 6.
+Depois instale o Unbound e suba a stack conforme os capítulos correspondentes.
 
 ## Instalação do HD externo
 
@@ -184,29 +180,25 @@ sudo systemctl start homelab-backup.service
 
 O comando de preparação é destrutivo e exige que o disco correto seja identificado pelo modelo, capacidade e serial. Consulte o [capítulo 16](docs/16-HD-Externo-Backup.md) antes de executar.
 
-## Aviso sobre o corte de DHCP
-
-Nunca desative o DHCP do modem antes de:
-
-- fixar o IP do Wyse;
-- validar o AdGuard Home na porta 53;
-- configurar e testar o DHCP do AdGuard;
-- manter um notebook com IP manual de emergência.
-
 ## Estado do projeto
 
 - [x] Arquitetura definida
 - [x] Documentação inicial
-- [x] Compose dos serviços
-- [x] Scripts operacionais
-- [x] Stack de backup externo documentada
-- [x] Timers de backup, manutenção e restore test
-- [x] Hardware recebido e ligado
-- [x] BIOS acessada e hardware básico validado
-- [x] SATA Flash de 32 GB reconhecido pela BIOS
-- [ ] Instalação do Ubuntu Server 24.04 LTS
-- [ ] Testes dos serviços no hardware real
+- [x] Hardware recebido e validado
+- [x] Ubuntu Server 24.04.4 LTS instalado
+- [x] IP estático `192.168.100.2`
+- [x] Docker Engine e Compose instalados
+- [x] Portainer instalado e validado
+- [x] Unbound instalado e validado
+- [x] AdGuard Home instalado e validado
+- [x] DHCP migrado do Huawei para o AdGuard Home
+- [x] DNS dos clientes apontando para `192.168.100.2`
+- [x] Bloqueio de anúncios validado
+- [x] Uptime Kuma instalado e monitores iniciais configurados
+- [ ] Diun instalado e validado
+- [ ] Firewall UFW aplicado
 - [ ] Formatação e validação do HD externo real
+- [ ] Stack Restic instalada e restore test validado
 - [ ] Evidências e capturas de tela da implantação
 - [ ] Upgrade futuro para SSD de 120 GB
 
@@ -218,7 +210,7 @@ Nunca desative o DHCP do modem antes de:
 - Unbound: https://unbound.docs.nlnetlabs.nl/
 - Portainer: https://docs.portainer.io/
 - Uptime Kuma: https://github.com/louislam/uptime-kuma
-- Watchtower: https://containrrr.dev/watchtower/
+- Diun: https://crazymax.dev/diun/
 - OISD: https://oisd.nl/setup/adguardhome
 - Restic: https://restic.readthedocs.io/en/stable/
 - systemd.timer: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
