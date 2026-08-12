@@ -23,9 +23,46 @@ Verifique:
 - último snapshot Restic bem-sucedido;
 - mensagens de erro no kernel/USB.
 
+## Horário, NTP e agendamentos
+
+A política temporal do HomeLab é:
+
+```text
+Timezone : America/Sao_Paulo
+Offset   : -03:00
+RTC      : UTC
+LocalRTC : no
+NTP      : systemd-timesyncd sincronizado
+```
+
+Validação rápida:
+
+```bash
+date -Is
+timedatectl
+readlink -f /etc/localtime
+cat /etc/timezone
+timedatectl timesync-status
+```
+
+Audite os agendamentos:
+
+```bash
+systemctl list-timers --all --no-pager
+systemctl list-timers --all 'homelab-*' --no-pager
+```
+
+O backup diário usa base 03:15 com jitter de até 5 minutos; manutenção usa domingo 04:30 com jitter de até 10 minutos; restore test usa dia 1 às 05:30 com jitter de até 15 minutos. O Diun executa aos domingos às 04:00 com `TZ=America/Sao_Paulo`.
+
+Containers sem scheduler local podem permanecer em UTC. Não force `TZ` apenas por uniformidade visual.
+
+O `sysstat` possui `sysstat-collect.timer` ativo e grava amostras a cada 10 minutos. Embora `/etc/cron.d/sysstat` exista, a auditoria mostrou que não há duplicidade efetiva de amostras.
+
+Consulte [17 — Horário e agendamentos](17-Horario-Agendamentos.md) para a auditoria completa.
+
 ## Backup
 
-O backup já é agendado por systemd. Para validar o último sucesso:
+O backup já é agendado por systemd e a execução automática foi validada em produção. Para validar o último sucesso:
 
 ```bash
 sudo cat /srv/backup/status/last-success.txt
@@ -62,15 +99,47 @@ cd ~/homelab-infrastructure-server
 
 ## Atualizações automáticas de segurança
 
+A política já foi auditada e validada:
+
+- `unattended-upgrades.service` ativo;
+- `apt-daily.timer` ativo;
+- `apt-daily-upgrade.timer` ativo;
+- atualização diária das listas APT habilitada;
+- unattended upgrade diário habilitado;
+- pockets de segurança permitidos;
+- reboot automático não habilitado;
+- execução real registrada em `/var/log/unattended-upgrades/unattended-upgrades.log`.
+
 Audite periodicamente:
 
 ```bash
 systemctl status unattended-upgrades --no-pager
 systemctl status apt-daily.timer --no-pager
 systemctl status apt-daily-upgrade.timer --no-pager
+sudo tail -n 50 /var/log/unattended-upgrades/unattended-upgrades.log
 ```
 
-O objetivo é permitir patches de segurança automáticos sem reboot automático não supervisionado.
+Reboots continuam sendo planejados e executados manualmente.
+
+## SSH
+
+A política de acesso remoto validada é:
+
+```text
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+```
+
+Auditoria:
+
+```bash
+sudo sshd -t
+sudo sshd -T | grep -Ei 'passwordauthentication|kbdinteractiveauthentication|pubkeyauthentication|permitrootlogin'
+```
+
+Não altere ou remova a chave pública ativa sem manter uma sessão administrativa válida para recuperação.
 
 ## Atualização da stack Docker
 
@@ -190,10 +259,14 @@ sudo journalctl -u homelab-restore-test.service --no-pager -n 100
 
 ## Checklist mensal
 
+- [ ] timezone continua `America/Sao_Paulo` e NTP sincronizado;
+- [ ] timers do HomeLab apresentam próximos disparos coerentes;
 - [ ] Ubuntu e pacotes revisados;
 - [ ] `unattended-upgrades` operacional;
+- [ ] SSH continua aceitando chave e rejeitando senha;
 - [ ] stack Docker revisada após notificações do Diun;
 - [ ] snapshots Restic recentes;
+- [ ] `last-success.txt` recente e com `status=success`;
 - [ ] restore test recente com `RESTORE_TEST_OK.txt`;
 - [ ] `restic check` sem erros;
 - [ ] espaço interno superior a 20%;
