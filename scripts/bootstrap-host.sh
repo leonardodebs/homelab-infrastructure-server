@@ -11,7 +11,7 @@ apt full-upgrade -y
 apt install -y ca-certificates curl wget git nano vim htop btop jq unzip tree dnsutils net-tools ufw smartmontools unattended-upgrades unbound unbound-anchor dns-root-data
 
 timedatectl set-timezone America/Sao_Paulo
-hostnamectl set-hostname homeserver
+hostnamectl set-hostname homelab
 
 mkdir -p /opt/homelab/{compose,data,backups,scripts}
 chown -R "${SUDO_USER:-root}":"${SUDO_USER:-root}" /opt/homelab
@@ -30,4 +30,4 @@ ufw default allow outgoing
 ufw allow from 192.168.100.0/24 to any port 22 proto tcp comment 'SSH LAN'
 ufw --force enable
 
-echo "Bootstrap concluído. Configure o IP estático antes de continuar."
+echo "Bootstrap concluído para o host homelab. Configure o IP estático antes de continuar."
