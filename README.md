@@ -14,7 +14,7 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 - monitoramento de CPU, memória, disco, rede, temperatura e containers pelo Beszel;
 - verificação controlada de atualizações de imagens com Diun;
 - firewall, backups e manutenção documentada;
-- recuperação local por HD externo com Restic.
+- recuperação local por mídia USB com Restic.
 
 ## Hardware do projeto
 
@@ -25,7 +25,7 @@ Centralizar no Dell Wyse os serviços essenciais da casa:
 | RAM | 4 GB DDR3 / 1333 MT/s |
 | Armazenamento de produção atual | SATA Flash Drive 32 GB |
 | Upgrade planejado | SSD 120 GB no fim de 2026 |
-| Armazenamento de backup | HD externo Seagate 1 TB via USB |
+| Armazenamento de backup atual | Pendrive USB 128 GB, 117,2 GiB utilizáveis, validado com F3 |
 | Rede principal | TP-Link UE300 USB 3.0 Gigabit Ethernet |
 | Recursos extras | HDMI, VGA, USB e Wi-Fi |
 | Sistema atual | Ubuntu Server 24.04.4 LTS amd64 |
@@ -55,7 +55,7 @@ flowchart TD
     Wyse --> Beszel[Beszel\nCPU + RAM + Disco + Rede + Docker]
     Wyse --> Diun[Diun\nImage Update Notifier]
     Wyse --> SSD[SATA Flash 32 GB\nProdução]
-    Wyse --> USB[HD Seagate 1 TB\n/srv/backup]
+    Wyse --> USB[Pendrive USB 128 GB\n/srv/backup]
     USB --> Restic[Restic\nSnapshots criptografados]
     Restic --> Restore[Testes de restauração]
     Modem --> Clientes[Notebooks, celulares, TVs e demais clientes]
@@ -71,7 +71,7 @@ flowchart TD
 5. Uptime Kuma monitora disponibilidade; Beszel monitora recursos e histórico do host/containers.
 6. O Diun apenas detecta novas imagens; atualizações de containers são executadas manualmente após revisão e backup.
 7. Portas administrativas ficam disponíveis somente na rede local e nenhuma porta deve ser encaminhada no modem para a Internet.
-8. O SATA Flash de 32 GB é o ambiente de produção inicial; o HD externo de 1 TB será o ambiente de recuperação.
+8. O SATA Flash de 32 GB é o ambiente de produção inicial; um pendrive USB de 128 GB, validado com F3, é o destino atual dos snapshots Restic em `/srv/backup`.
 9. O backup é cancelado se `/srv/backup` não estiver montado, evitando gravar acidentalmente no armazenamento interno.
 10. A senha Restic não é armazenada no repositório e precisa ser guardada fora do servidor.
 11. O upgrade para SSD de 120 GB está planejado para o fim de 2026 e será tratado como exercício de disaster recovery/restauração.
@@ -95,14 +95,14 @@ flowchart TD
 15. [Manutenção](docs/13-Manutencao.md)
 16. [Troubleshooting](docs/14-Troubleshooting.md)
 17. [Upgrades futuros](docs/15-Upgrade.md)
-18. [HD externo e stack Restic](docs/16-HD-Externo-Backup.md)
+18. [Mídia USB externa e stack Restic](docs/16-HD-Externo-Backup.md)
 
 ## Stack de backup externo
 
 | Rotina | Agendamento | Resultado |
 |---|---:|---|
 | Backup Restic | diariamente às 03:15 | snapshot criptografado e incremental |
-| Manutenção | domingo às 04:30 | retenção, prune, check parcial e SMART |
+| Manutenção | domingo às 04:30 | retenção, prune, check parcial e SMART quando suportado |
 | Restore test | dia 1 às 05:30 | restauração em diretório isolado |
 
 Retenção padrão:
@@ -171,7 +171,7 @@ nano compose/.env
 
 Depois instale o Unbound e suba a stack conforme os capítulos correspondentes.
 
-## Instalação do HD externo
+## Instalação da mídia USB de backup
 
 Depois que os serviços estiverem estáveis:
 
@@ -182,7 +182,7 @@ sudo ./scripts/install-backup-stack.sh
 sudo systemctl start homelab-backup.service
 ```
 
-O comando de preparação é destrutivo e exige que o disco correto seja identificado pelo modelo, capacidade e serial. Consulte o [capítulo 16](docs/16-HD-Externo-Backup.md) antes de executar.
+O comando de preparação é destrutivo e exige que o dispositivo correto seja identificado pelo modelo, capacidade, serial e transporte. Consulte o [capítulo 16](docs/16-HD-Externo-Backup.md) antes de executar.
 
 ## Estado do projeto
 
@@ -203,8 +203,9 @@ O comando de preparação é destrutivo e exige que o disco correto seja identif
 - [x] Beszel Hub instalado e saudável
 - [x] Beszel Agent conectado e métricas do host validadas
 - [x] Firewall UFW aplicado e validado
-- [ ] Formatação e validação do HD externo real
-- [ ] Stack Restic instalada e restore test validado
+- [x] Pendrive USB 128 GB validado com F3, formatado em ext4 e montado em `/srv/backup`
+- [x] Stack Restic instalada, timers ativos e primeiro snapshot criado com sucesso
+- [ ] Restore test validado
 - [ ] Evidências e capturas de tela da implantação
 - [ ] Upgrade futuro para SSD de 120 GB
 
