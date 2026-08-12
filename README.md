@@ -45,6 +45,22 @@ Identificadores únicos de hardware, MAC addresses, tokens, hashes e senhas não
 | Domínio local | `home.arpa` |
 | Unbound | `127.0.0.1:5335` |
 
+## Tempo e agendamentos
+
+A referência temporal do host foi auditada e validada:
+
+| Item | Estado |
+|---|---|
+| Timezone | `America/Sao_Paulo` |
+| Offset local | `-03:00` |
+| `/etc/localtime` | `America/Sao_Paulo` |
+| `/etc/timezone` | `America/Sao_Paulo` |
+| RTC | UTC |
+| RTC em hora local | não |
+| NTP | `systemd-timesyncd` ativo e sincronizado |
+
+Containers podem operar internamente em UTC quando não possuem agendamento local. O Diun possui `TZ=America/Sao_Paulo` explicitamente porque executa checagem agendada.
+
 ## Serviços atuais
 
 | Serviço | Função | Acesso |
@@ -93,7 +109,10 @@ flowchart TD
 10. Restic cancela o backup se `/srv/backup` não estiver montado.
 11. A senha Restic, senhas administrativas, tokens e hashes não são versionados.
 12. O AdGuard está configurado com `auth_attempts: 5` e `block_auth_min: 3`.
-13. O upgrade para SSD de 120 GB será usado como exercício de disaster recovery.
+13. SSH remoto aceita chave pública e rejeita autenticação por senha e keyboard-interactive; login root remoto está desativado.
+14. Atualizações automáticas de segurança estão ativas sem reboot automático não supervisionado.
+15. O host usa `America/Sao_Paulo`, RTC em UTC e NTP sincronizado.
+16. O upgrade para SSD de 120 GB será usado como exercício de disaster recovery.
 
 ## Documentação
 
@@ -115,14 +134,15 @@ flowchart TD
 16. [Troubleshooting](docs/14-Troubleshooting.md)
 17. [Upgrades](docs/15-Upgrade.md)
 18. [Mídia USB e Restic](docs/16-HD-Externo-Backup.md)
+19. [Horário e agendamentos](docs/17-Horario-Agendamentos.md)
 
 ## Backup
 
 | Rotina | Agendamento |
 |---|---:|
-| Restic backup | diariamente às 03:15 |
-| Manutenção | domingo às 04:30 |
-| Restore test | dia 1 às 05:30 |
+| Restic backup | diariamente às 03:15 + jitter de até 5 min |
+| Manutenção | domingo às 04:30 + jitter de até 10 min |
+| Restore test | dia 1 às 05:30 + jitter de até 15 min |
 
 Retenção:
 
@@ -131,14 +151,17 @@ Retenção:
 - 12 mensais;
 - 2 anuais.
 
-Primeiro ciclo validado:
+Ciclo validado:
 
 ```text
-Snapshot       a79a4c33
-Restic check   no errors were found
-Restore        604 files/dirs, 5.878 MiB
-Marker         RESTORE_TEST_OK.txt
+Snapshot inicial       a79a4c33
+Snapshot automático    85e06611
+Restic check            no errors were found
+Restore                 604 files/dirs, 5.878 MiB
+Marker                  RESTORE_TEST_OK.txt
 ```
+
+O snapshot automático foi criado pelo `homelab-backup.timer`, confirmando a execução real do agendamento systemd.
 
 ## Estrutura principal
 
@@ -208,10 +231,13 @@ Depois consulte `docs/16-HD-Externo-Backup.md`.
 - [x] Mídia USB 128 GB validada com F3 e ext4
 - [x] Restic e timers ativos
 - [x] Primeiro snapshot e `restic check` validados
+- [x] Backup automático por systemd validado
 - [x] Restore test validado
+- [x] SSH por chave validado e autenticação por senha desativada
+- [x] `unattended-upgrades` auditado e operacional sem reboot automático
+- [x] Timezone, RTC, NTP, timers e schedulers auditados
 - [x] Documentação técnica revisada para refletir a implantação real
-- [ ] SSH por chave + desativação de senha após validação
-- [ ] Auditoria final do `unattended-upgrades`
+- [ ] Burn-in de estabilidade por 48–72 horas
 - [ ] Evidências/capturas de tela para portfólio
 - [ ] Upgrade futuro para SSD de 120 GB
 
