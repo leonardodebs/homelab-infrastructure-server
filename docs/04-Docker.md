@@ -1,48 +1,47 @@
 # 04 — Docker Engine e Compose
 
-## Remover pacotes conflitantes
+## Instalação
+
+A implantação usa o repositório oficial do Docker para Ubuntu.
 
 ```bash
 for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do
   sudo apt-get remove -y "$pkg"
 done
-```
 
-## Adicionar o repositório oficial
-
-```bash
 sudo apt update
 sudo apt install -y ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
   -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
-```
 
-```bash
 . /etc/os-release
 printf '%s\n' \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${UBUNTU_CODENAME:-$VERSION_CODENAME} stable" \
   | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
-```
 
-## Instalar
-
-```bash
 sudo apt update
 sudo apt install -y \
   docker-ce docker-ce-cli containerd.io \
   docker-buildx-plugin docker-compose-plugin
 ```
 
-## Permitir uso sem sudo
+## Uso sem sudo
 
 ```bash
 sudo usermod -aG docker "$USER"
-newgrp docker
 ```
 
-## Configurar logs e inicialização
+Faça logout/login ou abra uma nova sessão antes de validar:
+
+```bash
+docker ps
+```
+
+## Configuração do daemon
+
+O projeto limita o crescimento de logs e mantém `live-restore`:
 
 ```bash
 sudo mkdir -p /etc/docker
@@ -56,50 +55,102 @@ sudo tee /etc/docker/daemon.json >/dev/null <<'EOF'
   "live-restore": true
 }
 EOF
-```
 
-```bash
 sudo systemctl enable --now docker
 sudo systemctl restart docker
 ```
 
-## Testes
+## Stack atual
 
-```bash
-docker version
-docker compose version
-docker run --rm hello-world
-systemctl is-enabled docker
-systemctl is-active docker
+O arquivo oficial é:
+
+```text
+compose/compose.yaml
 ```
+
+A stack `homelab` contém:
+
+- `portainer`;
+- `adguardhome`;
+- `uptime-kuma`;
+- `beszel`;
+- `beszel-agent`;
+- `homelab-web`;
+- `diun`.
+
+O Unbound não roda em Docker; ele é um serviço nativo do Ubuntu.
 
 ## Comandos operacionais
 
 ```bash
-docker ps
-docker ps -a
-docker images
-docker stats
-docker system df
-docker compose up -d
-docker compose logs -f
-docker compose pull
-docker compose down
+cd ~/homelab-infrastructure-server
+
+docker compose --env-file compose/.env -f compose/compose.yaml ps
+docker compose --env-file compose/.env -f compose/compose.yaml logs -f
+docker compose --env-file compose/.env -f compose/compose.yaml pull
+docker compose --env-file compose/.env -f compose/compose.yaml up -d
 ```
 
-## Observação sobre firewall
+Para atualizar um único serviço:
 
-Portas publicadas por containers são tratadas pelo Docker e podem não seguir o comportamento esperado das regras UFW comuns. Por isso, este projeto:
+```bash
+docker compose --env-file compose/.env -f compose/compose.yaml pull SERVICO
+docker compose --env-file compose/.env -f compose/compose.yaml up -d SERVICO
+```
 
-- usa `network_mode: host` somente para o AdGuard Home;
-- vincula Portainer e Uptime Kuma ao IP da LAN;
-- não publica portas no modem;
-- documenta regras adicionais no capítulo de UFW.
+## Persistência
+
+Volumes nomeados atuais:
+
+```text
+homelab_portainer_data
+homelab_adguard_work
+homelab_adguard_conf
+homelab_uptime_kuma_data
+homelab_beszel_data
+homelab_beszel_agent_data
+homelab_diun_data
+```
+
+Esses volumes são tratados pela política de backup Restic quando existem.
+
+O `homelab-web` é stateless: os arquivos do portal ficam no diretório `web/` do próprio repositório e são montados somente leitura no Nginx.
+
+## Segurança
+
+- `no-new-privileges:true` é usado nos containers da stack;
+- interfaces web são vinculadas a `192.168.100.2`, não a todas as interfaces;
+- AdGuard Home usa `network_mode: host` por causa de DNS/DHCP;
+- Beszel Agent usa `network_mode: host`, `DISABLE_SSH=true` e não expõe a porta 45876;
+- Portainer e Diun precisam acessar o Docker socket; Beszel Agent usa o socket em modo somente leitura;
+- nenhuma porta Docker é encaminhada no modem.
+
+## Docker e UFW
+
+Portas publicadas pelo Docker podem ser processadas antes das regras UFW comuns. Por isso o projeto combina:
+
+- binding explícito no IP da LAN;
+- UFW no host;
+- regras específicas da rede Docker para checks do Uptime Kuma;
+- ausência de port forwarding externo.
+
+Consulte `docs/11-UFW.md`.
 
 ## Validação
 
-- [ ] Docker ativo no boot;
-- [ ] usuário consegue executar `docker ps` sem sudo;
-- [ ] Compose plugin instalado;
-- [ ] política de rotação de logs aplicada;
-- [ ] `hello-world` executado com sucesso.
+```bash
+docker version
+docker compose version
+docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+docker system df
+systemctl is-enabled docker
+systemctl is-active docker
+```
+
+Estado atual:
+
+- [x] Docker ativo no boot;
+- [x] Compose plugin instalado;
+- [x] usuário administrativo executa Docker sem sudo;
+- [x] rotação de logs configurada;
+- [x] stack `homelab` operacional.
