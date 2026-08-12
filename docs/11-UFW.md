@@ -27,6 +27,7 @@ sudo ufw allow from 192.168.100.0/24 to any port 53 proto udp comment 'DNS UDP L
 sudo ufw allow in on enxd037454bc6c1 from 0.0.0.0/0 to any port 67 proto udp comment 'DHCP server LAN IPv4'
 sudo ufw allow from 192.168.100.0/24 to any port 80 proto tcp comment 'AdGuard Web LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 3001 proto tcp comment 'Uptime Kuma LAN'
+sudo ufw allow from 192.168.100.0/24 to any port 8080 proto tcp comment 'HomeLab Web LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 8090 proto tcp comment 'Beszel LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 9443 proto tcp comment 'Portainer LAN'
 ```
@@ -79,7 +80,7 @@ Portas publicadas pelo Docker podem ser processadas pelas regras do Docker antes
 
 O projeto reduz o risco por estas medidas:
 
-- Portainer, Uptime Kuma e Beszel Hub são vinculados explicitamente ao IP `192.168.100.2`;
+- Portainer, Uptime Kuma, HomeLab Web e Beszel Hub são vinculados explicitamente ao IP `192.168.100.2`;
 - o Huawei não possui port forwarding para o Wyse;
 - nenhuma interface administrativa deve ser publicada em `0.0.0.0`;
 - o AdGuard usa modo host e recebe regras UFW específicas para a LAN.
@@ -102,6 +103,7 @@ Portas esperadas na LAN:
 67/udp     AdGuard DHCPv4
 80/tcp     AdGuard Web
 3001/tcp   Uptime Kuma
+8080/tcp   HomeLab Web Portal
 8090/tcp   Beszel Hub
 9443/tcp   Portainer
 ```
@@ -114,14 +116,21 @@ Portas locais esperadas:
 
 ## Verificação de outro dispositivo da LAN
 
-Use um **Windows PowerShell local no notebook**, com prompt semelhante a `PS C:\Users\Leonardo>`. Não entre por SSH antes de executar `Test-NetConnection`, pois esse cmdlet não existe no shell Linux.
+Use um **Windows PowerShell local no notebook**, com prompt semelhante a `PS C:\Users\Leonardo>`.
 
 ```powershell
 Test-NetConnection 192.168.100.2 -Port 22
 Test-NetConnection 192.168.100.2 -Port 80
 Test-NetConnection 192.168.100.2 -Port 3001
+Test-NetConnection 192.168.100.2 -Port 8080
 Test-NetConnection 192.168.100.2 -Port 8090
 Test-NetConnection 192.168.100.2 -Port 9443
+```
+
+Portal interno:
+
+```text
+http://192.168.100.2:8080
 ```
 
 Depois valide nova conexão SSH:
@@ -162,5 +171,5 @@ DNS         : 192.168.100.2
 - regra LAN para o Unbound `5335`;
 - regra IPv6 em UDP/67 para DHCP;
 - port forwarding no modem;
-- exposição de SSH, Portainer, Uptime Kuma, Beszel ou AdGuard para a Internet;
+- exposição de SSH, Portainer, Uptime Kuma, HomeLab Web, Beszel ou AdGuard para a Internet;
 - `ufw disable` como solução permanente.
