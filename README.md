@@ -205,7 +205,7 @@ O comando de preparação é destrutivo e exige que o dispositivo correto seja i
 - [x] Firewall UFW aplicado e validado
 - [x] Pendrive USB 128 GB validado com F3, formatado em ext4 e montado em `/srv/backup`
 - [x] Stack Restic instalada, timers ativos e primeiro snapshot criado com sucesso
-- [ ] Restore test validado
+- [x] Restore test validado com restauração isolada do snapshot e `restic check` sem erros
 - [ ] Evidências e capturas de tela da implantação
 - [ ] Upgrade futuro para SSD de 120 GB
 
