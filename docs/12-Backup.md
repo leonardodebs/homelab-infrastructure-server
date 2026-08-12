@@ -1,10 +1,10 @@
 # 12 — Backup e restauração
 
-A estratégia oficial do projeto usa um **HD externo Seagate de 1 TB**, conectado por USB e montado em `/srv/backup`. O disco é exclusivo do HomeLab e não recebe arquivos pessoais dos notebooks.
+A estratégia atual usa uma **mídia USB de 128 GB nominais**, validada com F3, formatada em ext4 e montada em `/srv/backup`.
 
-O passo a passo completo está em:
+O passo a passo detalhado está em:
 
-- [16 — HD externo dedicado ao backup](16-HD-Externo-Backup.md)
+- [16 — Mídia USB dedicada ao backup](16-HD-Externo-Backup.md)
 
 ## Arquitetura
 
@@ -12,42 +12,63 @@ O passo a passo completo está em:
 SATA Flash interno de 32 GB
 └── produção: Ubuntu, Docker e serviços
 
-HD externo de 1 TB
-└── recuperação: snapshots Restic, testes e status
+Mídia USB de 128 GB
+└── /srv/backup
+    ├── restic
+    ├── restore-tests
+    └── status
 ```
 
-O HD não substitui o armazenamento interno para execução dos serviços. AdGuard Home, DHCP, Unbound, Portainer e Uptime Kuma continuam no SATA Flash para não dependerem do cabo USB durante a inicialização.
-
-O upgrade futuro para SSD de 120 GB não altera a arquitetura de backup: o HD externo continuará dedicado à recuperação.
+A mídia USB não hospeda serviços de produção. Ela é dedicada à recuperação.
 
 ## Tecnologia
 
 A stack utiliza:
 
-- **ext4** no HD externo;
+- ext4;
 - montagem por UUID em `/srv/backup`;
-- **Restic** para backup criptografado, incremental e deduplicado;
-- **systemd timers** para automação;
-- **smartmontools** para saúde do disco, quando a ponte USB suporta SMART;
-- teste automático de restauração em diretório isolado.
+- Restic para backup criptografado, incremental e deduplicado;
+- systemd timers;
+- `flock` para impedir operações Restic simultâneas;
+- manutenção com retenção, prune e check parcial;
+- teste mensal de restauração em diretório isolado;
+- SMART somente quando a mídia/ponte USB oferece suporte.
 
 ## Escopo protegido
 
-- repositório e arquivos Compose;
-- Netplan, Unbound, Docker e UFW;
-- volumes do Portainer;
-- volumes do AdGuard Home;
-- volume do Uptime Kuma;
-- configurações da rotina de backup, sem incluir a senha Restic.
+O backup atual inclui:
 
-Não são armazenadas imagens Docker, caches, camadas `overlay2`, logs temporários ou o próprio conteúdo de `/srv/backup`.
+- repositório e arquivos Compose do HomeLab;
+- `/etc/fstab`;
+- Netplan;
+- Unbound;
+- configuração do Docker;
+- UFW e `/etc/default/ufw`;
+- units do systemd;
+- MOTD customizado do HomeLab;
+- configuração da própria rotina Restic, sem a senha;
+- volumes persistentes do Portainer;
+- AdGuard Home;
+- Uptime Kuma;
+- Beszel Hub;
+- Beszel Agent;
+- Diun.
+
+O HomeLab Web é protegido pelo próprio repositório Git, pois seus arquivos ficam em `web/`.
+
+Não são incluídos:
+
+- `/etc/homelab-backup/restic-password`;
+- `/srv/backup` como origem;
+- imagens e layers recriáveis do Docker;
+- caches e logs temporários.
 
 ## Agendamento
 
 | Rotina | Frequência |
 |---|---|
-| Snapshot | diariamente às 03:15 |
-| Retenção, prune, check parcial e SMART | domingo às 04:30 |
+| Snapshot | diariamente às 03:15 + pequeno atraso aleatório do systemd |
+| Retenção, prune, check parcial e tentativa de SMART | domingo às 04:30 |
 | Teste de restauração | dia 1 de cada mês às 05:30 |
 
 ## Retenção
@@ -56,6 +77,57 @@ Não são armazenadas imagens Docker, caches, camadas `overlay2`, logs temporár
 - 8 semanais;
 - 12 mensais;
 - 2 anuais.
+
+## Primeiro backup validado
+
+A implantação já produziu um snapshot real com sucesso.
+
+Evidências observadas:
+
+```text
+status=success
+snapshot=a79a4c33
+```
+
+O snapshot continha 279 arquivos e 205 diretórios, totalizando 604 itens de filesystem e aproximadamente 5.878 MiB restauráveis no momento do teste inicial.
+
+## Integridade validada
+
+Foi executado:
+
+```bash
+sudo bash -c '
+set -a
+source /etc/homelab-backup/restic.env
+set +a
+restic check
+'
+```
+
+Resultado:
+
+```text
+no errors were found
+```
+
+## Restore test validado
+
+O primeiro teste de restauração recuperou o snapshot em diretório isolado e criou:
+
+```text
+/srv/backup/restore-tests/20260811-230507/RESTORE_TEST_OK.txt
+```
+
+Conteúdo observado:
+
+```text
+status=success
+finished_at=2026-08-11T23:05:12-03:00
+files_restored=279
+snapshot=latest
+```
+
+O Restic reportou 604 arquivos/diretórios restaurados, enquanto o script registrou 279 arquivos porque conta somente objetos `-type f`.
 
 ## Execução manual
 
@@ -73,7 +145,7 @@ sudo systemctl start homelab-backup-maintenance.service
 sudo journalctl -u homelab-backup-maintenance.service --no-pager -n 200
 ```
 
-Teste de restauração:
+Restore test:
 
 ```bash
 sudo systemctl start homelab-restore-test.service
@@ -86,31 +158,30 @@ Listar snapshots:
 sudo bash -c 'source /etc/homelab-backup/restic.env; restic snapshots'
 ```
 
-## Restauração segura
-
-O script restaura em uma pasta separada e não substitui automaticamente o ambiente ativo:
+## Restauração manual segura
 
 ```bash
 sudo ./scripts/restore.sh latest
 ```
 
-O destino padrão é:
-
-```text
-/srv/backup/manual-restore/AAAAMMDD-HHMMSS
-```
-
-Depois da inspeção, os arquivos necessários podem ser copiados manualmente para o ambiente de produção.
+O script restaura em diretório separado dentro de `/srv/backup/manual-restore/` e não substitui automaticamente arquivos ativos.
 
 ## Proteções implementadas
 
-- o backup falha quando `/srv/backup` não está montado;
-- duas operações Restic não podem rodar simultaneamente;
-- containers com dados persistentes são pausados brevemente;
-- um `trap` reinicia os containers que estavam ativos, mesmo em caso de erro;
-- a senha não é incluída no próprio repositório;
-- o teste mensal comprova que snapshots podem ser lidos e restaurados.
+- backup cancelado se `/srv/backup` não estiver montado;
+- `flock` evita operações concorrentes;
+- containers stateful são interrompidos brevemente;
+- `trap` reinicia somente os containers que estavam ativos;
+- senha Restic fica fora do repositório e do próprio backup;
+- restore test mensal comprova legibilidade dos snapshots;
+- mídia pode ser desconectada com segurança depois de parar timers/serviços e desmontar.
 
-## Limitação
+## Limitações
 
-O HD externo é uma cópia local. Ele não protege contra roubo, incêndio, surto que atinja todos os equipamentos ou falha simultânea. A evolução futura é manter uma segunda cópia criptografada fora do HomeLab.
+A mídia USB é uma cópia local. Ela não implementa 3-2-1 sozinha e não protege contra roubo, incêndio, surto elétrico que atinja ambos os equipamentos ou falha física simultânea.
+
+Evoluções possíveis:
+
+- segunda mídia de backup;
+- cópia criptografada externa/off-site;
+- uso futuro do HD de maior capacidade como segunda camada de recuperação.
