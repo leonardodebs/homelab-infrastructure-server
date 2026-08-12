@@ -10,7 +10,7 @@ set -Eeuo pipefail
 # 22/tcp   SSH
 # 53/tcp   DNS
 # 53/udp   DNS
-# 67/udp   DHCP Server (somente na interface LAN)
+# 67/udp   DHCP Server IPv4 (somente na interface LAN)
 # 80/tcp   AdGuard Home
 # 3001/tcp Uptime Kuma
 # 8090/tcp Beszel
@@ -68,9 +68,10 @@ ok "SSH TCP/22 permitido somente para $LAN_CIDR"
 log "Etapa 5/8 - Liberando DNS e DHCP"
 ufw allow from "$LAN_CIDR" to any port 53 proto tcp comment 'DNS TCP LAN'
 ufw allow from "$LAN_CIDR" to any port 53 proto udp comment 'DNS UDP LAN'
-ufw allow in on "$LAN_IF" to any port 67 proto udp comment 'DHCP server LAN'
+# Origem IPv4 explícita evita criar uma regra equivalente e desnecessária para IPv6/UDP 67.
+ufw allow in on "$LAN_IF" from 0.0.0.0/0 to any port 67 proto udp comment 'DHCP server LAN IPv4'
 ok "DNS TCP/UDP 53 permitido para a LAN"
-ok "DHCP UDP/67 permitido somente pela interface $LAN_IF"
+ok "DHCP IPv4 UDP/67 permitido somente pela interface $LAN_IF"
 
 log "Etapa 6/8 - Liberando dashboards administrativos"
 ufw allow from "$LAN_CIDR" to any port 80 proto tcp comment 'AdGuard Web LAN'
@@ -111,9 +112,14 @@ cat <<'EOT'
 PRÓXIMA VALIDAÇÃO - NÃO FECHE ESTA SESSÃO SSH AINDA
 ============================================================
 
-Em OUTRO PowerShell no Windows, teste:
+Abra um NOVO Windows PowerShell no notebook.
+O prompt deve ser parecido com:
 
-  ssh leonardo@192.168.100.2
+  PS C:\Users\Leonardo>
+
+NÃO execute ssh antes dos Test-NetConnection; esses comandos são do Windows PowerShell.
+
+Teste:
 
   Test-NetConnection 192.168.100.2 -Port 22
   Test-NetConnection 192.168.100.2 -Port 80
@@ -121,12 +127,25 @@ Em OUTRO PowerShell no Windows, teste:
   Test-NetConnection 192.168.100.2 -Port 8090
   Test-NetConnection 192.168.100.2 -Port 9443
 
-Depois:
+Depois valide uma NOVA sessão SSH:
+
+  ssh leonardo@192.168.100.2
+
+Saia dessa nova sessão com:
+
+  exit
+
+De volta ao Windows PowerShell, valide DNS:
 
   nslookup ubuntu.com
   nslookup doubleclick.net
 
-E, por fim, teste DHCP:
+Esperado:
+  DNS Server       : 192.168.100.2
+  ubuntu.com       : resolução normal
+  doubleclick.net  : 0.0.0.0 e/ou ::
+
+Por fim, teste DHCP no Windows PowerShell:
 
   ipconfig /release
   ipconfig /renew
@@ -140,6 +159,7 @@ Esperado no Wi-Fi:
 Observação:
 - A porta 3000 do AdGuard NÃO é liberada.
 - A porta 68 UDP NÃO é liberada como serviço.
+- UDP/67 é somente DHCPv4; DHCPv6 usa outras portas e não é fornecido pelo AdGuard neste projeto.
 - O Unbound 5335 permanece somente em 127.0.0.1.
 - Beszel Agent NÃO expõe a porta 45876.
 ============================================================
