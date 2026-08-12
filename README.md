@@ -200,8 +200,8 @@ O comando de preparação é destrutivo e exige que o disco correto seja identif
 - [x] Bloqueio de anúncios validado
 - [x] Uptime Kuma instalado e monitores iniciais configurados
 - [x] Diun instalado e validado
-- [ ] Beszel Hub instalado
-- [ ] Beszel Agent conectado e métricas do host validadas
+- [x] Beszel Hub instalado e saudável
+- [x] Beszel Agent conectado e métricas do host validadas
 - [ ] Firewall UFW aplicado
 - [ ] Formatação e validação do HD externo real
 - [ ] Stack Restic instalada e restore test validado
