@@ -67,9 +67,11 @@ Não são incluídos:
 
 | Rotina | Frequência |
 |---|---|
-| Snapshot | diariamente às 03:15 + pequeno atraso aleatório do systemd |
-| Retenção, prune, check parcial e tentativa de SMART | domingo às 04:30 |
-| Teste de restauração | dia 1 de cada mês às 05:30 |
+| Snapshot | diariamente às 03:15 + `RandomizedDelaySec=5m` |
+| Retenção, prune, check parcial e tentativa de SMART | domingo às 04:30 + `RandomizedDelaySec=10m` |
+| Teste de restauração | dia 1 de cada mês às 05:30 + `RandomizedDelaySec=15m` |
+
+Todos os timers usam a hora local do host, configurada como `America/Sao_Paulo`.
 
 ## Retenção
 
@@ -80,7 +82,7 @@ Não são incluídos:
 
 ## Primeiro backup validado
 
-A implantação já produziu um snapshot real com sucesso.
+A implantação produziu um snapshot inicial real com sucesso.
 
 Evidências observadas:
 
@@ -90,6 +92,35 @@ snapshot=a79a4c33
 ```
 
 O snapshot continha 279 arquivos e 205 diretórios, totalizando 604 itens de filesystem e aproximadamente 5.878 MiB restauráveis no momento do teste inicial.
+
+## Backup automático validado
+
+O `homelab-backup.timer` executou automaticamente em produção e criou um segundo snapshot:
+
+```text
+LastTriggerUSec=Wed 2026-08-12 03:15:50 -03
+snapshot=85e06611
+started_at=2026-08-12T03:15:57-03:00
+finished_at=2026-08-12T03:16:08-03:00
+status=success
+```
+
+O Restic reutilizou o snapshot anterior como parent:
+
+```text
+using parent snapshot a79a4c33
+Files: 6 new, 18 changed, 261 unmodified
+snapshot 85e06611 saved
+```
+
+Isso comprova:
+
+- disparo automático pelo systemd timer;
+- execução incremental/deduplicada;
+- aplicação da política de retenção;
+- atualização do marcador `last-success.txt`;
+- encerramento bem-sucedido do serviço;
+- continuidade dos containers após a janela de consistência.
 
 ## Integridade validada
 
@@ -157,6 +188,18 @@ Listar snapshots:
 ```bash
 sudo bash -c 'source /etc/homelab-backup/restic.env; restic snapshots'
 ```
+
+## Validação dos timers
+
+```bash
+systemctl list-timers --all 'homelab-*' --no-pager
+systemctl show homelab-backup.timer -p LastTriggerUSec -p NextElapseUSecRealtime
+systemctl cat homelab-backup.timer
+systemctl cat homelab-backup-maintenance.timer
+systemctl cat homelab-restore-test.timer
+```
+
+O horário mostrado em `NEXT` pode ser alguns minutos posterior ao `OnCalendar` por causa do `RandomizedDelaySec`. Isso é esperado e não representa erro de timezone.
 
 ## Restauração manual segura
 
