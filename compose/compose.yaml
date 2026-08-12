@@ -53,7 +53,6 @@ services:
       - "${SERVER_IP}:8090:8090"
     volumes:
       - beszel_data:/beszel_data
-      - beszel_socket:/beszel_socket
     healthcheck:
       test: ["CMD", "/beszel", "health", "--url", "http://localhost:8090"]
       interval: 120s
@@ -72,13 +71,13 @@ services:
       - no-new-privileges:true
     volumes:
       - beszel_agent_data:/var/lib/beszel-agent
-      - beszel_socket:/beszel_socket
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
-      LISTEN: /beszel_socket/beszel.sock
       HUB_URL: "http://${SERVER_IP}:8090"
       KEY: "${BESZEL_KEY}"
       TOKEN: "${BESZEL_TOKEN}"
+      DISABLE_SSH: "true"
+      FILESYSTEM: "dm-0"
     healthcheck:
       test: ["CMD", "/agent", "health"]
       interval: 120s
@@ -125,5 +124,4 @@ volumes:
   uptime_kuma_data:
   beszel_data:
   beszel_agent_data:
-  beszel_socket:
   diun_data:
