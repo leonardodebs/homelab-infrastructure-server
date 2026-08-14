@@ -72,6 +72,7 @@ ok "DHCP IPv4 UDP/67 permitido somente pela interface $LAN_IF"
 
 log "Etapa 6/8 - Liberando interfaces web e monitoramento interno"
 ufw allow from "$LAN_CIDR" to any port 80 proto tcp comment 'AdGuard Web LAN'
+ufw allow from "$LAN_CIDR" to any port 3000 proto tcp comment 'ntopng LAN'
 ufw allow from "$LAN_CIDR" to any port 3001 proto tcp comment 'Uptime Kuma LAN'
 ufw allow from "$LAN_CIDR" to any port 8080 proto tcp comment 'HomeLab Web LAN'
 ufw allow from "$LAN_CIDR" to any port 8090 proto tcp comment 'Beszel LAN'
@@ -85,6 +86,7 @@ ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 8090 proto tcp comment 'Docke
 ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 9443 proto tcp comment 'Docker monitor Portainer'
 
 ok "AdGuard Web TCP/80"
+ok "ntopng TCP/3000"
 ok "Uptime Kuma TCP/3001"
 ok "HomeLab Web TCP/8080"
 ok "Beszel TCP/8090"
@@ -111,7 +113,7 @@ ufw status verbose
 ok "UFW ativado."
 
 log "Sockets importantes atualmente em escuta"
-ss -lntup | grep -E '(:22|:53|:67|:80|:3001|:8080|:8090|:9443|:5335)\b' || true
+ss -lntup | grep -E '(:22|:53|:67|:80|:3000|:3001|:8080|:8090|:9443|:5335)\b' || true
 
 cat <<'EOT'
 
@@ -123,6 +125,7 @@ Abra um novo terminal no notebook e teste:
 
   Test-NetConnection 192.168.100.2 -Port 22
   Test-NetConnection 192.168.100.2 -Port 80
+  Test-NetConnection 192.168.100.2 -Port 3000
   Test-NetConnection 192.168.100.2 -Port 3001
   Test-NetConnection 192.168.100.2 -Port 8080
   Test-NetConnection 192.168.100.2 -Port 8090
@@ -131,10 +134,13 @@ Abra um novo terminal no notebook e teste:
 Portal HomeLab:
   http://192.168.100.2:8080
 
+ntopng:
+  http://192.168.100.2:3000
+
 Valide também nova conexão SSH, DNS e DHCP conforme docs/11-UFW.md.
 
 Observações:
-- A porta 3000 do AdGuard NÃO é liberada.
+- A porta 3000 é usada pelo ntopng e deve permanecer restrita à LAN.
 - UDP/67 é somente DHCPv4.
 - O Unbound 5335 permanece em 127.0.0.1.
 - Beszel Agent NÃO expõe a porta 45876.
