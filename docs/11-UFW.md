@@ -38,13 +38,14 @@ sudo ufw allow from 192.168.100.0/24 to any port 53 proto tcp comment 'DNS TCP L
 sudo ufw allow from 192.168.100.0/24 to any port 53 proto udp comment 'DNS UDP LAN'
 sudo ufw allow in on "$LAN_IF" from 0.0.0.0/0 to any port 67 proto udp comment 'DHCP server LAN IPv4'
 sudo ufw allow from 192.168.100.0/24 to any port 80 proto tcp comment 'AdGuard Web LAN'
+sudo ufw allow from 192.168.100.0/24 to any port 3000 proto tcp comment 'ntopng LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 3001 proto tcp comment 'Uptime Kuma LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 8080 proto tcp comment 'HomeLab Web LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 8090 proto tcp comment 'Beszel LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 9443 proto tcp comment 'Portainer LAN'
 ```
 
-A porta 3000/tcp do assistente inicial do AdGuard não é necessária depois da instalação.
+A porta `3000/tcp` não é mais usada pelo assistente inicial do AdGuard. No estado atual ela é utilizada pela interface web do ntopng e permanece liberada somente para a LAN.
 
 UDP/67 é DHCPv4. Não deve existir regra equivalente IPv6 para essa porta; DHCPv6 usa portas diferentes e está desativado neste projeto.
 
@@ -73,7 +74,7 @@ sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 8090 proto tcp comment 
 sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 9443 proto tcp comment 'Docker monitor Portainer'
 ```
 
-O script `scripts/configure-ufw.sh` detecta tanto a interface LAN quanto a subnet Docker antes de aplicar as regras.
+O script `scripts/configure-ufw.sh` detecta tanto a interface LAN quanto a subnet Docker antes de aplicar as regras. Se o script for usado para reconstruir o firewall do zero, a regra do ntopng deve estar presente para manter o acesso à porta `3000/tcp` pela LAN.
 
 ## IPv6
 
@@ -107,6 +108,7 @@ Sockets esperados:
 53/tcp/udp   AdGuard DNS
 67/udp       AdGuard DHCPv4
 80/tcp       AdGuard Web
+3000/tcp     ntopng
 3001/tcp     Uptime Kuma
 8080/tcp     HomeLab Web
 8090/tcp     Beszel Hub
@@ -117,7 +119,7 @@ Sockets esperados:
 Valide:
 
 ```bash
-sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3001|:8080|:8090|:9443|:5335)\b'
+sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3000|:3001|:8080|:8090|:9443|:5335)\b'
 ```
 
 ## Validação a partir de um notebook Windows
@@ -125,6 +127,7 @@ sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3001|:8080|:8090|:9443|:5335)\b'
 ```powershell
 Test-NetConnection 192.168.100.2 -Port 22
 Test-NetConnection 192.168.100.2 -Port 80
+Test-NetConnection 192.168.100.2 -Port 3000
 Test-NetConnection 192.168.100.2 -Port 3001
 Test-NetConnection 192.168.100.2 -Port 8080
 Test-NetConnection 192.168.100.2 -Port 8090
@@ -151,20 +154,21 @@ DNS         : 192.168.100.2
 
 Portas publicadas pelo Docker podem ser processadas pelas regras do Docker antes das regras UFW comuns. O projeto reduz o risco usando:
 
-- binding explícito das interfaces web em `192.168.100.2`;
+- binding explícito das interfaces web em `192.168.100.2` quando aplicável;
 - ausência de port forwarding no Huawei;
 - UFW com entrada padrão negada;
 - acesso Docker -> host restrito aos checks necessários.
+
+O ntopng é um serviço nativo do host e sua porta `3000/tcp` é liberada diretamente no UFW somente para a LAN.
 
 Se o servidor ganhar VPN, VLAN, segunda interface ou exposição externa, revise também a cadeia `DOCKER-USER`.
 
 ## Regras que não devem existir
 
 - liberações administrativas globais sem origem limitada;
-- porta 3000 do AdGuard após o setup;
 - regra LAN para Unbound/5335;
 - UDP/67 em IPv6;
-- port forwarding no modem para interfaces administrativas;
+- port forwarding no modem para interfaces administrativas, incluindo ntopng;
 - exposição da porta 45876 do Beszel Agent;
 - `ufw disable` como solução permanente.
 
@@ -174,6 +178,7 @@ Se o servidor ganhar VPN, VLAN, segunda interface ou exposição externa, revise
 - [x] entrada padrão negada;
 - [x] IPv6 tratado pelo firewall;
 - [x] serviços administrativos limitados à LAN;
+- [x] ntopng liberado na porta `3000/tcp` somente para a LAN;
 - [x] DHCPv4 limitado à interface LAN;
 - [x] regras Docker -> host validadas com Uptime Kuma;
 - [x] nenhuma porta administrativa encaminhada no modem.
