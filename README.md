@@ -4,62 +4,37 @@ Servidor doméstico de baixo consumo baseado em **Dell Wyse N03D / 3290**, **Ubu
 
 ## Objetivo
 
-Centralizar no Dell Wyse os serviços essenciais da casa:
+Centralizar serviços essenciais da rede doméstica no HomeLab:
 
-- DHCPv4 pelo AdGuard Home;
-- DNS com bloqueio de anúncios e rastreadores;
-- resolução DNS recursiva e cache local com Unbound;
-- gerenciamento de containers pelo Portainer;
-- monitoramento de disponibilidade pelo Uptime Kuma;
-- métricas de host e containers pelo Beszel;
-- detecção controlada de novas imagens com Diun;
-- portal administrativo interno;
+- DHCPv4 e filtragem DNS com AdGuard Home;
+- resolução DNS recursiva com Unbound;
+- gerenciamento Docker com Portainer;
+- disponibilidade com Uptime Kuma;
+- métricas do host e containers com Beszel;
+- análise de tráfego e hosts com ntopng;
+- detecção de novas imagens com Diun;
 - firewall UFW;
+- portal administrativo interno;
 - backup criptografado e restore test com Restic.
 
-## Hardware do projeto
+## Hardware e rede
 
-| Componente | Especificação |
+| Item | Estado atual |
 |---|---|
 | Equipamento | Dell Wyse N03D / 3290 |
 | CPU | Intel Celeron N2807 @ 1.58 GHz |
-| RAM | 4 GB DDR3 / 1333 MT/s |
-| Armazenamento de produção | SATA Flash Drive 32 GB |
-| Upgrade planejado | SSD 120 GB no fim de 2026 |
-| Backup atual | Pendrive USB 128 GB, 117,2 GiB utilizáveis, validado com F3 |
+| RAM | 4 GB DDR3 |
+| Armazenamento interno | SATA Flash 32 GB |
+| Backup | mídia USB 128 GB em ext4 |
 | Rede principal | TP-Link UE300 USB 3.0 Gigabit Ethernet |
-| Sistema | Ubuntu Server 24.04.4 LTS amd64 |
+| Sistema | Ubuntu Server 24.04.4 LTS |
 | Hostname | `homelab` |
-| BIOS observada | Phoenix SecureCore 1.0R (2017-12-22) |
-
-Identificadores únicos de hardware, MAC addresses, tokens, hashes e senhas não devem ser publicados no repositório.
-
-## Endereçamento
-
-| Item | Valor |
-|---|---|
 | Rede | `192.168.100.0/24` |
-| Gateway Huawei | `192.168.100.1` |
+| Gateway | `192.168.100.1` |
 | HomeLab | `192.168.100.2` |
-| Pool DHCP | `192.168.100.50` a `192.168.100.200` |
-| Domínio local | `home.arpa` |
-| Unbound | `127.0.0.1:5335` |
+| Pool DHCP | `192.168.100.50-192.168.100.200` |
 
-## Tempo e agendamentos
-
-A referência temporal do host foi auditada e validada:
-
-| Item | Estado |
-|---|---|
-| Timezone | `America/Sao_Paulo` |
-| Offset local | `-03:00` |
-| `/etc/localtime` | `America/Sao_Paulo` |
-| `/etc/timezone` | `America/Sao_Paulo` |
-| RTC | UTC |
-| RTC em hora local | não |
-| NTP | `systemd-timesyncd` ativo e sincronizado |
-
-Containers podem operar internamente em UTC quando não possuem agendamento local. O Diun possui `TZ=America/Sao_Paulo` explicitamente porque executa checagem agendada.
+O Wi-Fi do Dell não participa da infraestrutura crítica. Identificadores únicos de hardware, MAC addresses, tokens, hashes e senhas não devem ser publicados no repositório.
 
 ## Serviços atuais
 
@@ -67,60 +42,101 @@ Containers podem operar internamente em UTC quando não possuem agendamento loca
 |---|---|---|
 | AdGuard Home | DNS + DHCPv4 | `http://192.168.100.2` |
 | Unbound | DNS recursivo/cache | `127.0.0.1:5335` |
-| Portainer | Gerência Docker | `https://192.168.100.2:9443` |
-| Uptime Kuma | Disponibilidade | `http://192.168.100.2:3001` |
-| Beszel | Métricas | `http://192.168.100.2:8090` |
-| Beszel Agent | Coleta local | WebSocket-only |
-| Diun | Notificação de imagens | sem porta publicada |
-| HomeLab Web | Portal interno | `http://192.168.100.2:8080` |
-| Restic | Backup/restore | `/srv/backup` |
+| ntopng | análise de tráfego/hosts | `http://192.168.100.2:3000` |
+| Uptime Kuma | disponibilidade | `http://192.168.100.2:3001` |
+| HomeLab Web | portal interno | `http://192.168.100.2:8080` |
+| Beszel | métricas | `http://192.168.100.2:8090` |
+| Portainer | gerência Docker | `https://192.168.100.2:9443` |
+| Diun | notificação de imagens | sem porta publicada |
+| Restic | backup/restore | `/srv/backup` |
 
 ## Arquitetura
 
 ```mermaid
 flowchart TD
-    Internet --> Modem[Huawei HG8145V5-V2\nNAT + Wi-Fi\nDHCP desativado]
-    Modem --> Wyse[Dell Wyse\nhomelab\n192.168.100.2]
-    Modem --> Clientes[Notebooks, celulares, TVs]
-    Clientes --> AGH[AdGuard Home\nDNS + DHCPv4]
+    Internet --> Huawei[Huawei HG8145V5-V2\n192.168.100.1\nGateway + NAT + Wi-Fi]
+    Huawei --> Wyse[Dell Wyse\nhomelab\n192.168.100.2]
+    Huawei --> Clientes[Notebooks, celulares, TVs]
+    Clientes -->|DHCP + DNS| AGH[AdGuard Home]
     AGH --> Unbound[Unbound\n127.0.0.1:5335]
-    Unbound --> RootDNS[DNS Root/Autoritativos]
-    Wyse --> Portainer[Portainer]
-    Wyse --> Kuma[Uptime Kuma]
-    Wyse --> Beszel[Beszel Hub + Agent]
+    Unbound --> Internet
+    Wyse --> Ntop[ntopng :3000]
+    Wyse --> Kuma[Uptime Kuma :3001]
+    Wyse --> Beszel[Beszel :8090]
+    Wyse --> Portainer[Portainer :9443]
     Wyse --> Diun[Diun]
-    Wyse --> Portal[HomeLab Web]
-    Wyse --> USB[Mídia USB\n/srv/backup]
-    USB --> Restic[Restic]
-    Restic --> Restore[Restore tests]
+    Wyse --> Portal[HomeLab Web :8080]
+    Wyse --> Backup[Restic /srv/backup]
 ```
 
-## Decisões técnicas
+## Observabilidade
 
-1. O Wyse opera por Ethernet; Wi-Fi não participa da infraestrutura crítica.
-2. O DHCP do Huawei está desativado; o AdGuard fornece DHCPv4.
-3. O AdGuard usa `network_mode: host` e upstream somente no Unbound local.
-4. O Unbound roda nativamente em `127.0.0.1:5335`.
-5. Uptime Kuma monitora disponibilidade; Beszel monitora recursos.
-6. Beszel Agent opera em WebSocket-only com SSH interno desativado.
-7. Diun apenas notifica; containers são atualizados manualmente após backup/revisão.
-8. Interfaces administrativas ficam somente na LAN e não há port forwarding no modem.
-9. UFW bloqueia entrada por padrão e possui regras específicas para LAN e checks Docker -> host.
-10. Restic cancela o backup se `/srv/backup` não estiver montado.
-11. A senha Restic, senhas administrativas, tokens e hashes não são versionados.
-12. O AdGuard está configurado com `auth_attempts: 5` e `block_auth_min: 3`.
-13. SSH remoto aceita chave pública e rejeita autenticação por senha e keyboard-interactive; login root remoto está desativado.
-14. Atualizações automáticas de segurança estão ativas sem reboot automático não supervisionado.
-15. O host usa `America/Sao_Paulo`, RTC em UTC e NTP sincronizado.
-16. O upgrade para SSD de 120 GB será usado como exercício de disaster recovery.
+A observabilidade foi dividida por responsabilidade:
+
+- **AdGuard Home:** consultas DNS, DHCP e políticas por cliente;
+- **Uptime Kuma:** disponibilidade de serviços e conectividade;
+- **Beszel:** CPU, RAM, disco, temperatura e containers;
+- **ntopng:** análise de tráfego, hosts, protocolos e fluxos visíveis pela interface monitorada.
+
+O ntopng foi instalado nativamente no Ubuntu, está acessível pela porta `3000/tcp` somente na LAN e teve dashboard/filtros validados.
+
+### Limitação do ntopng
+
+O Dell Wyse não é o gateway da residência. O Huawei continua como gateway/NAT em `192.168.100.1`. Portanto, o ntopng não captura automaticamente todo o tráfego entre clientes e Internet.
+
+Para visibilidade integral da LAN será necessária uma evolução como gateway/firewall dedicado, switch com SPAN/port mirroring ou tecnologia equivalente de exportação de fluxos.
+
+## Segurança
+
+- UFW com entrada padrão negada;
+- interfaces administrativas limitadas à LAN;
+- porta `3000/tcp` liberada somente para o ntopng na LAN;
+- sem port forwarding administrativo no modem;
+- SSH por chave ED25519;
+- autenticação SSH por senha e keyboard-interactive desativadas;
+- login root remoto desativado;
+- atualizações automáticas de segurança ativas sem reboot automático não supervisionado.
+
+## DNS e DHCP
+
+O DHCPv4 do Huawei foi desativado e migrado para o AdGuard Home.
+
+Fluxo DNS:
+
+```text
+Cliente -> AdGuard Home -> Unbound -> DNS raiz/autoritativos
+```
+
+O AdGuard aplica listas de bloqueio, regras locais e políticas por cliente. O Unbound resolve recursivamente, valida DNSSEC e mantém cache local.
+
+## Backup
+
+| Rotina | Agendamento |
+|---|---|
+| Backup Restic | diariamente às 03:15 + jitter de até 5 min |
+| Manutenção | domingo às 04:30 + jitter de até 10 min |
+| Restore test | dia 1 às 05:30 + jitter de até 15 min |
+
+Retenção: 7 diários, 8 semanais, 12 mensais e 2 anuais.
+
+Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic check` sem erros e restore test em diretório isolado.
+
+## Tempo
+
+- timezone: `America/Sao_Paulo`;
+- RTC em UTC;
+- NTP sincronizado por `systemd-timesyncd`;
+- timers e schedulers auditados;
+- containers podem operar em UTC quando não dependem de horário local;
+- Diun utiliza explicitamente `America/Sao_Paulo`.
 
 ## Documentação
 
 1. [Arquitetura](docs/00-Arquitetura.md)
 2. [Hardware](docs/01-Hardware.md)
 3. [Instalação do Ubuntu](docs/02-Instalacao-Ubuntu.md)
-4. [Configuração inicial e IP](docs/03-Configuracao-Inicial.md)
-5. [Docker Engine e Compose](docs/04-Docker.md)
+4. [Configuração inicial](docs/03-Configuracao-Inicial.md)
+5. [Docker](docs/04-Docker.md)
 6. [Portainer](docs/05-Portainer.md)
 7. [AdGuard Home](docs/06-AdGuardHome.md)
 8. [Unbound](docs/07-Unbound.md)
@@ -135,122 +151,30 @@ flowchart TD
 17. [Upgrades](docs/15-Upgrade.md)
 18. [Mídia USB e Restic](docs/16-HD-Externo-Backup.md)
 19. [Horário e agendamentos](docs/17-Horario-Agendamentos.md)
-
-## Backup
-
-| Rotina | Agendamento |
-|---|---:|
-| Restic backup | diariamente às 03:15 + jitter de até 5 min |
-| Manutenção | domingo às 04:30 + jitter de até 10 min |
-| Restore test | dia 1 às 05:30 + jitter de até 15 min |
-
-Retenção:
-
-- 7 diários;
-- 8 semanais;
-- 12 mensais;
-- 2 anuais.
-
-Ciclo validado:
-
-```text
-Snapshot inicial       a79a4c33
-Snapshot automático    85e06611
-Restic check            no errors were found
-Restore                 604 files/dirs, 5.878 MiB
-Marker                  RESTORE_TEST_OK.txt
-```
-
-O snapshot automático foi criado pelo `homelab-backup.timer`, confirmando a execução real do agendamento systemd.
-
-## Estrutura principal
-
-```text
-.
-├── README.md
-├── compose/
-│   ├── compose.yaml
-│   └── .env.example
-├── config/
-│   ├── restic/
-│   └── unbound/
-├── docs/
-├── scripts/
-├── systemd/
-└── web/
-```
-
-`compose/compose.yaml` é o único arquivo Compose oficial da stack. Arquivos Compose legados não devem ser mantidos em paralelo.
-
-## Uso rápido
-
-```bash
-git clone https://github.com/leonardodebs/homelab-infrastructure-server.git
-cd homelab-infrastructure-server
-sudo bash scripts/bootstrap-host.sh
-bash scripts/install-docker.sh
-```
-
-Crie o arquivo local de ambiente:
-
-```bash
-cp compose/.env.example compose/.env
-nano compose/.env
-```
-
-Não versione `compose/.env`.
-
-## Mídia de backup
-
-Identifique localmente o dispositivo antes de qualquer operação destrutiva:
-
-```bash
-lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINT,MODEL,TRAN,RM
-```
-
-Depois consulte `docs/16-HD-Externo-Backup.md`.
+20. [ntopng e observabilidade de rede](docs/18-ntopng.md)
 
 ## Estado do projeto
 
-- [x] Arquitetura definida e revisada
-- [x] Hardware recebido e validado
-- [x] Ubuntu Server 24.04.4 LTS instalado
-- [x] Hostname `homelab`
-- [x] IP estático `192.168.100.2`
-- [x] Docker Engine e Compose instalados
-- [x] Portainer instalado
-- [x] Unbound validado
-- [x] AdGuard Home validado
-- [x] DHCP migrado para o AdGuard
-- [x] DNS/bloqueio validado nos clientes
-- [x] Uptime Kuma com monitores validados
-- [x] Beszel Hub + Agent validados
-- [x] Diun validado
-- [x] HomeLab Web operacional
-- [x] UFW aplicado e validado
-- [x] Mídia USB 128 GB validada com F3 e ext4
-- [x] Restic e timers ativos
-- [x] Primeiro snapshot e `restic check` validados
-- [x] Backup automático por systemd validado
-- [x] Restore test validado
-- [x] SSH por chave validado e autenticação por senha desativada
-- [x] `unattended-upgrades` auditado e operacional sem reboot automático
-- [x] Timezone, RTC, NTP, timers e schedulers auditados
-- [x] Documentação técnica revisada para refletir a implantação real
-- [ ] Burn-in de estabilidade por 48–72 horas
-- [ ] Evidências/capturas de tela para portfólio
-- [ ] Upgrade futuro para SSD de 120 GB
-
-## Referências oficiais
-
-- Ubuntu Server: https://documentation.ubuntu.com/server/
-- Docker Engine: https://docs.docker.com/engine/install/ubuntu/
-- AdGuard Home: https://github.com/AdguardTeam/AdGuardHome/wiki
-- Unbound: https://unbound.docs.nlnetlabs.nl/
-- Portainer: https://docs.portainer.io/
-- Uptime Kuma: https://github.com/louislam/uptime-kuma
-- Beszel: https://beszel.dev/
-- Diun: https://crazymax.dev/diun/
-- Restic: https://restic.readthedocs.io/en/stable/
-- systemd.timer: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
-- smartmontools: https://www.smartmontools.org/
+- [x] Ubuntu Server, hostname e IP estático
+- [x] Docker Engine e Compose
+- [x] AdGuard Home + DHCPv4
+- [x] Unbound
+- [x] Portainer
+- [x] Uptime Kuma
+- [x] Beszel Hub + Agent
+- [x] ntopng e porta `3000/tcp` na LAN
+- [x] Diun
+- [x] HomeLab Web
+- [x] UFW
+- [x] SSH hardening
+- [x] unattended-upgrades
+- [x] timezone/NTP/RTC auditados
+- [x] mídia USB e Restic
+- [x] backup automático
+- [x] `restic check`
+- [x] restore test
+- [x] documentação técnica consolidada
+- [ ] burn-in de estabilidade por 48–72 horas
+- [ ] evidências/capturas para portfólio
+- [ ] evolução futura para gateway/firewall dedicado ou captura integral da LAN
+- [ ] upgrade futuro para SSD de 120 GB
