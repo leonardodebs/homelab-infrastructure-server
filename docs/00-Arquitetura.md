@@ -26,6 +26,7 @@ Transformar o Dell Wyse em servidor de infraestrutura doméstica de baixo consum
 - Unbound como resolvedor DNS recursivo local;
 - Uptime Kuma para disponibilidade;
 - Beszel Hub + Agent para métricas do host e containers;
+- ntopng para análise de tráfego e hosts visíveis pela interface do HomeLab;
 - Diun para detecção de novas imagens;
 - HomeLab Web como portal interno;
 - UFW como firewall do host;
@@ -45,6 +46,7 @@ flowchart TD
     Wyse --> Kuma[Uptime Kuma :3001]
     Wyse --> Beszel[Beszel Hub :8090]
     Wyse --> Agent[Beszel Agent\nWebSocket-only]
+    Wyse --> Ntop[ntopng :3000\nAnálise de tráfego]
     Wyse --> Diun[Diun\nImage Update Notifier]
     Wyse --> Portal[HomeLab Web :8080]
     Wyse --> Backup[Restic\n/srv/backup]
@@ -74,8 +76,22 @@ O AdGuard aplica listas de bloqueio, regras locais e políticas por cliente. Con
 
 - Uptime Kuma verifica gateway, Internet, DNS e interfaces web;
 - Beszel registra CPU, RAM, swap, disco, rede, temperatura e containers;
+- ntopng acrescenta análise de tráfego, hosts, protocolos e fluxos observáveis pela interface Ethernet do HomeLab;
+- AdGuard Home fornece histórico de consultas DNS e identificação de clientes;
 - o portal HomeLab centraliza os links administrativos;
 - logs do Docker e do systemd permanecem disponíveis para troubleshooting.
+
+### Limitação do ntopng
+
+O Huawei continua sendo o gateway da residência. Como o Dell Wyse não está inline entre os clientes e a Internet, o ntopng não observa automaticamente todo o tráfego da LAN.
+
+A visibilidade integral exigiria uma evolução de arquitetura, por exemplo:
+
+- gateway/firewall dedicado;
+- switch gerenciável com SPAN/port mirroring;
+- exportação de fluxos pela infraestrutura de rede, quando suportada.
+
+No desenho atual, o ntopng é uma ferramenta complementar de observabilidade do HomeLab.
 
 ## Atualizações de containers
 
@@ -107,6 +123,7 @@ O primeiro backup e o primeiro restore test foram executados com sucesso.
 | Pool DHCP | `192.168.100.50-192.168.100.200` |
 | Unbound | `127.0.0.1:5335` |
 | AdGuard Web | `http://192.168.100.2` |
+| ntopng | `http://192.168.100.2:3000` |
 | Uptime Kuma | `http://192.168.100.2:3001` |
 | HomeLab Web | `http://192.168.100.2:8080` |
 | Beszel | `http://192.168.100.2:8090` |
@@ -118,6 +135,7 @@ O primeiro backup e o primeiro restore test foram executados com sucesso.
 - Nenhuma interface administrativa é encaminhada no modem para a Internet.
 - O Unbound permanece somente em loopback.
 - O Beszel Agent não expõe porta de entrada e opera em WebSocket-only.
+- O ntopng permanece acessível apenas pela LAN e sua visibilidade é limitada ao tráfego observável pela interface monitorada.
 - Atualizações de DNS/DHCP não são automatizadas.
 - Backup deve preceder alterações relevantes na stack.
 - O armazenamento interno de 32 GB deve permanecer enxuto.
@@ -137,3 +155,4 @@ O primeiro backup e o primeiro restore test foram executados com sucesso.
 11. UFW aplicado e validado.
 12. Mídia USB preparada.
 13. Restic instalado, backup criado, `restic check` executado e restauração testada.
+14. ntopng instalado nativamente, porta `3000/tcp` liberada na LAN e dashboard validado.
