@@ -42,11 +42,7 @@ A implantação opera com sete monitores:
    - URL: `https://192.168.100.2:9443`;
    - certificado autoassinado ignorado somente neste monitor.
 
-6. **Beszel Web**
-   - tipo: HTTP;
-   - URL: `http://192.168.100.2:8090`.
-
-7. **HomeLab Web**
+6. **HomeLab Web**
    - tipo: HTTP;
    - URL: `http://192.168.100.2:8080`.
 

@@ -48,7 +48,7 @@
           <div class="card"><div class="meta">DNS + DHCP</div><h3>AdGuard Home</h3><p>Filtragem DNS, bloqueio de anúncios, políticas por cliente e DHCPv4.</p></div>
           <div class="card"><div class="meta">Network Analytics</div><h3>ntopng</h3><p>Análise de tráfego, hosts, protocolos e fluxos visíveis na interface monitorada.</p></div>
           <div class="card"><div class="meta">Availability</div><h3>Uptime Kuma</h3><p>Monitoramento de disponibilidade dos serviços e endpoints.</p></div>
-          <div class="card"><div class="meta">Observability</div><h3>Beszel</h3><p>CPU, memória, disco, rede, temperatura e containers.</p></div>
+          <div class="card"><div class="meta">Observability</div><h3>Prometheus + Grafana</h3><p>CPU, memória, disco, rede, temperatura, containers e alertas.</p></div>
           <div class="card"><div class="meta">Containers</div><h3>Portainer</h3><p>Administração visual da stack Docker.</p></div>
           <div class="card"><div class="meta">Recursive DNS</div><h3>Unbound</h3><p>Resolver recursivo, DNSSEC e cache local.</p></div>
           <div class="card"><div class="meta">Image Updates</div><h3>Diun</h3><p>Detecção controlada de novas imagens Docker, sem atualização automática.</p></div>
@@ -79,7 +79,7 @@ Gateway residencial · NAT · Wi-Fi · DHCP desativado
        ├── ntopng · análise de tráfego e hosts
        ├── Portainer · gerenciamento Docker
        ├── Uptime Kuma · disponibilidade
-       ├── Beszel · métricas do host e containers
+       ├── Exporters · métricas para Prometheus/Grafana no Lenovo
        ├── Diun · detecção de novas imagens
        ├── Restic · backup / retenção / restore test
        └── UFW + SSH hardening · segurança</div>

@@ -9,7 +9,7 @@ name: dell-node-monitoring
 
 services:
   node-exporter-dell:
-    image: prom/node-exporter:v1.12.1
+    image: prom/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
     container_name: node-exporter-dell
     hostname: homelab-dell
     restart: unless-stopped
@@ -49,7 +49,7 @@ services:
         max-file: "3"
 
   cadvisor-dell:
-    image: gcr.io/cadvisor/cadvisor:v0.55.1
+    image: gcr.io/cadvisor/cadvisor:v0.55.1@sha256:3de2bd5203120b866d74a9b283b2ffb8ec382fbf9dc321814700c6ea6f44ec57
     container_name: cadvisor-dell
     hostname: homelab-dell
     restart: unless-stopped

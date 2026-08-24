@@ -10,7 +10,7 @@ Centralizar serviços essenciais da rede doméstica no HomeLab:
 - resolução DNS recursiva com Unbound;
 - gerenciamento Docker com Portainer;
 - disponibilidade com Uptime Kuma;
-- métricas do host e containers com Beszel;
+- métricas do host e containers com Prometheus e Grafana no Lenovo;
 - análise de tráfego e hosts com ntopng;
 - detecção de novas imagens com Diun;
 - firewall UFW;
@@ -45,7 +45,7 @@ O Wi-Fi do Dell não participa da infraestrutura crítica. Identificadores únic
 | ntopng | análise de tráfego/hosts | `http://192.168.100.2:3000` |
 | Uptime Kuma | disponibilidade | `http://192.168.100.2:3001` |
 | HomeLab Web | portal interno | `http://192.168.100.2:8080` |
-| Beszel | métricas | `http://192.168.100.2:8090` |
+| Grafana | métricas e alertas | `http://192.168.100.3:3000` |
 | Portainer | gerência Docker | `https://192.168.100.2:9443` |
 | Diun | notificação de imagens | sem porta publicada |
 | Restic | backup/restore | `/srv/backup` |
@@ -62,7 +62,7 @@ flowchart TD
     Unbound --> Internet
     Wyse --> Ntop[ntopng :3000]
     Wyse --> Kuma[Uptime Kuma :3001]
-    Wyse --> Beszel[Beszel :8090]
+    Wyse --> Grafana[Grafana no Lenovo :3000]
     Wyse --> Portainer[Portainer :9443]
     Wyse --> Diun[Diun]
     Wyse --> Portal[HomeLab Web :8080]
@@ -75,7 +75,7 @@ A observabilidade foi dividida por responsabilidade:
 
 - **AdGuard Home:** consultas DNS, DHCP e políticas por cliente;
 - **Uptime Kuma:** disponibilidade de serviços e conectividade;
-- **Beszel:** CPU, RAM, disco, temperatura e containers;
+- **Prometheus + Grafana:** CPU, RAM, disco, temperatura, containers e alertas;
 - **ntopng:** análise de tráfego, hosts, protocolos e fluxos visíveis pela interface monitorada.
 
 O ntopng foi instalado nativamente no Ubuntu, está acessível pela porta `3000/tcp` somente na LAN e teve dashboard/filtros validados.
@@ -142,7 +142,7 @@ Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic
 8. [Unbound](docs/07-Unbound.md)
 9. [DHCP](docs/08-DHCP.md)
 10. [Uptime Kuma](docs/09-Uptime-Kuma.md)
-11. [Beszel](docs/10-Beszel.md)
+11. [Migração do Beszel para Grafana](docs/10-Beszel.md)
 12. [Diun](docs/11-Diun.md)
 13. [UFW](docs/12-UFW.md)
 14. [Backup e restauração](docs/13-Backup.md)
@@ -161,7 +161,7 @@ Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic
 - [x] Unbound
 - [x] Portainer
 - [x] Uptime Kuma
-- [x] Beszel Hub + Agent
+- [x] Beszel desativado e substituído por Prometheus + Grafana
 - [x] ntopng e porta `3000/tcp` na LAN
 - [x] Diun
 - [x] HomeLab Web

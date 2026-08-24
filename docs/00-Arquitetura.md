@@ -25,7 +25,7 @@ Transformar o Dell Wyse em servidor de infraestrutura doméstica de baixo consum
 - AdGuard Home como DNS e DHCPv4;
 - Unbound como resolvedor DNS recursivo local;
 - Uptime Kuma para disponibilidade;
-- Beszel Hub + Agent para métricas do host e containers;
+- Node Exporter e cAdvisor exportando métricas para Prometheus/Grafana no Lenovo;
 - ntopng para análise de tráfego e hosts visíveis pela interface do HomeLab;
 - Diun para detecção de novas imagens;
 - HomeLab Web como portal interno;
@@ -44,8 +44,8 @@ flowchart TD
     Unbound --> Internet
     Wyse --> Portainer[Portainer :9443]
     Wyse --> Kuma[Uptime Kuma :3001]
-    Wyse --> Beszel[Beszel Hub :8090]
-    Wyse --> Agent[Beszel Agent\nWebSocket-only]
+    Wyse --> Exporters[Node Exporter :9100\ncAdvisor :8081]
+    Exporters --> Grafana[Prometheus + Grafana\n192.168.100.3]
     Wyse --> Ntop[ntopng :3000\nAnálise de tráfego]
     Wyse --> Diun[Diun\nImage Update Notifier]
     Wyse --> Portal[HomeLab Web :8080]
@@ -75,7 +75,7 @@ O AdGuard aplica listas de bloqueio, regras locais e políticas por cliente. Con
 ## Observabilidade
 
 - Uptime Kuma verifica gateway, Internet, DNS e interfaces web;
-- Beszel registra CPU, RAM, swap, disco, rede, temperatura e containers;
+- Prometheus e Grafana registram CPU, RAM, swap, disco, rede, temperatura e containers;
 - ntopng acrescenta análise de tráfego, hosts, protocolos e fluxos observáveis pela interface Ethernet do HomeLab;
 - AdGuard Home fornece histórico de consultas DNS e identificação de clientes;
 - o portal HomeLab centraliza os links administrativos;
@@ -126,7 +126,7 @@ O primeiro backup e o primeiro restore test foram executados com sucesso.
 | ntopng | `http://192.168.100.2:3000` |
 | Uptime Kuma | `http://192.168.100.2:3001` |
 | HomeLab Web | `http://192.168.100.2:8080` |
-| Beszel | `http://192.168.100.2:8090` |
+| Grafana | `http://192.168.100.3:3000` |
 | Portainer | `https://192.168.100.2:9443` |
 
 ## Restrições e boas práticas
@@ -134,7 +134,7 @@ O primeiro backup e o primeiro restore test foram executados com sucesso.
 - O Wyse opera pela Ethernet principal; Wi-Fi não participa da operação crítica.
 - Nenhuma interface administrativa é encaminhada no modem para a Internet.
 - O Unbound permanece somente em loopback.
-- O Beszel Agent não expõe porta de entrada e opera em WebSocket-only.
+- Os exporters `9100/tcp` e `8081/tcp` aceitam somente o Prometheus em `192.168.100.3`.
 - O ntopng permanece acessível apenas pela LAN e sua visibilidade é limitada ao tráfego observável pela interface monitorada.
 - Atualizações de DNS/DHCP não são automatizadas.
 - Backup deve preceder alterações relevantes na stack.
@@ -149,7 +149,7 @@ O primeiro backup e o primeiro restore test foram executados com sucesso.
 5. AdGuard Home instalado e validado.
 6. DHCP migrado do Huawei para o AdGuard.
 7. Uptime Kuma instalado e monitores configurados.
-8. Beszel Hub e Agent instalados.
+8. Beszel aposentado após migração para Prometheus e Grafana.
 9. Diun instalado.
 10. HomeLab Web publicado na LAN.
 11. UFW aplicado e validado.

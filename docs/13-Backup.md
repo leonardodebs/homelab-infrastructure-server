@@ -50,8 +50,6 @@ O backup atual inclui:
 - volumes persistentes do Portainer;
 - AdGuard Home;
 - Uptime Kuma;
-- Beszel Hub;
-- Beszel Agent;
 - Diun.
 
 O HomeLab Web é protegido pelo próprio repositório Git, pois seus arquivos ficam em `web/`.

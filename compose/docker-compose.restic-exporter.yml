@@ -17,7 +17,7 @@
 
 services:
   restic-exporter:
-    image: ngosang/restic-exporter:2.1.2
+    image: ngosang/restic-exporter:2.1.2@sha256:a8f9cfa3016237c7008aefa4d9c6639bc9b34d2582eed07ac58dcf56632e4170
     container_name: restic-exporter
     hostname: homelab
     restart: unless-stopped

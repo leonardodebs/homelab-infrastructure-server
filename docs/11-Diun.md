@@ -13,8 +13,6 @@ Atualmente o Diun acompanha:
 - Portainer;
 - AdGuard Home;
 - Uptime Kuma;
-- Beszel Hub;
-- Beszel Agent;
 - HomeLab Web/Nginx;
 - o próprio Diun.
 

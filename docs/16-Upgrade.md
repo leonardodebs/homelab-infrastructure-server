@@ -94,7 +94,7 @@ Quando houver hardware mais potente:
 - Unbound;
 - DHCP;
 - Uptime Kuma;
-- Beszel;
+- Node Exporter e cAdvisor;
 - Portainer;
 - Diun;
 - portal interno;

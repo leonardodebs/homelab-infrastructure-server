@@ -17,7 +17,7 @@ Verifique:
 
 - containers reiniciando ou unhealthy;
 - falhas no Uptime Kuma;
-- CPU, RAM, disco e temperatura no Beszel;
+- CPU, RAM, disco e temperatura no dashboard Dell Overview do Grafana;
 - consultas DNS anormais no AdGuard;
 - espaço livre do sistema e do backup;
 - último snapshot Restic bem-sucedido;
@@ -215,7 +215,6 @@ journalctl -u docker --since today
 journalctl -u unbound --since today
 docker logs --tail 100 adguardhome
 docker logs --tail 100 diun
-docker logs --tail 100 beszel-agent
 ```
 
 Erros de armazenamento/USB:
@@ -272,6 +271,6 @@ sudo journalctl -u homelab-restore-test.service --no-pager -n 100
 - [ ] espaço interno superior a 20%;
 - [ ] mídia de backup sem erros de I/O;
 - [ ] Uptime Kuma sem incidentes não explicados;
-- [ ] Beszel sem tendência anormal de CPU/RAM/temperatura/disco;
+- [ ] Grafana sem tendência anormal de CPU/RAM/temperatura/disco;
 - [ ] nenhuma porta encaminhada no modem;
 - [ ] credenciais e acessos administrativos revisados.

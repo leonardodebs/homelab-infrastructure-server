@@ -53,8 +53,6 @@ if systemctl is-active --quiet docker; then
     adguardhome \
     portainer \
     uptime-kuma \
-    beszel \
-    beszel-agent \
     diun
   do
     if docker ps --format '{{.Names}}' | grep -Fxq "$container"; then
@@ -91,8 +89,6 @@ for volume in \
   homelab_adguard_work \
   homelab_adguard_conf \
   homelab_uptime_kuma_data \
-  homelab_beszel_data \
-  homelab_beszel_agent_data \
   homelab_diun_data
 do
   if docker volume inspect "$volume" >/dev/null 2>&1; then

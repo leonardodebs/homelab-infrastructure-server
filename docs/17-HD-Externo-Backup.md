@@ -36,7 +36,6 @@ SATA Flash interno 32 GB — produção
 ├── AdGuard Home
 ├── Portainer
 ├── Uptime Kuma
-├── Beszel
 ├── Diun
 ├── HomeLab Web
 └── Unbound
@@ -146,7 +145,6 @@ Incluídos:
 - volumes do Portainer;
 - AdGuard Home;
 - Uptime Kuma;
-- Beszel Hub e Agent;
 - Diun.
 
 O portal HomeLab é estático e está no próprio repositório Git.

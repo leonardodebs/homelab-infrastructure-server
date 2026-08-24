@@ -41,7 +41,6 @@ sudo ufw allow from 192.168.100.0/24 to any port 80 proto tcp comment 'AdGuard W
 sudo ufw allow from 192.168.100.0/24 to any port 3000 proto tcp comment 'ntopng LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 3001 proto tcp comment 'Uptime Kuma LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 8080 proto tcp comment 'HomeLab Web LAN'
-sudo ufw allow from 192.168.100.0/24 to any port 8090 proto tcp comment 'Beszel LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 9443 proto tcp comment 'Portainer LAN'
 ```
 
@@ -70,7 +69,6 @@ sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 53 proto tcp comment 'D
 sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 53 proto udp comment 'Docker monitor DNS UDP'
 sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 80 proto tcp comment 'Docker monitor AdGuard Web'
 sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 8080 proto tcp comment 'Docker monitor HomeLab Web'
-sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 8090 proto tcp comment 'Docker monitor Beszel'
 sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 9443 proto tcp comment 'Docker monitor Portainer'
 ```
 
@@ -136,7 +134,6 @@ Sockets esperados:
 3000/tcp     ntopng
 3001/tcp     Uptime Kuma
 8080/tcp     HomeLab Web
-8090/tcp     Beszel Hub
 9443/tcp     Portainer
 127.0.0.1:5335 Unbound
 ```
@@ -144,7 +141,7 @@ Sockets esperados:
 Valide:
 
 ```bash
-sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3000|:3001|:8080|:8090|:9443|:5335)\b'
+sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3000|:3001|:8080|:9443|:5335)\b'
 ```
 
 ## Validação a partir de um notebook Windows
@@ -155,7 +152,6 @@ Test-NetConnection 192.168.100.2 -Port 80
 Test-NetConnection 192.168.100.2 -Port 3000
 Test-NetConnection 192.168.100.2 -Port 3001
 Test-NetConnection 192.168.100.2 -Port 8080
-Test-NetConnection 192.168.100.2 -Port 8090
 Test-NetConnection 192.168.100.2 -Port 9443
 nslookup ubuntu.com
 nslookup doubleclick.net
@@ -194,7 +190,6 @@ Se o servidor ganhar VPN, VLAN, segunda interface ou exposição externa, revise
 - regra LAN para Unbound/5335;
 - UDP/67 em IPv6;
 - port forwarding no modem para interfaces administrativas, incluindo ntopng;
-- exposição da porta 45876 do Beszel Agent;
 - `ufw disable` como solução permanente.
 
 ## Estado atual

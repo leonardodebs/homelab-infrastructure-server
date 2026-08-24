@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-O `ntopng` foi implantado para acrescentar visibilidade de tráfego de rede ao HomeLab, complementando o monitoramento de disponibilidade do Uptime Kuma, as métricas de host/containers do Beszel e os registros DNS do AdGuard Home.
+O `ntopng` foi implantado para acrescentar visibilidade de tráfego de rede ao HomeLab, complementando o monitoramento de disponibilidade do Uptime Kuma, as métricas de host/containers no Grafana e os registros DNS do AdGuard Home.
 
 ## Estado atual
 
@@ -28,7 +28,7 @@ A arquitetura atual separa responsabilidades:
 |---|---|
 | AdGuard Home | consultas DNS, DHCP e políticas por cliente |
 | Uptime Kuma | disponibilidade de serviços e conectividade |
-| Beszel | CPU, RAM, disco, temperatura, rede do host e containers |
+| Prometheus + Grafana | CPU, RAM, disco, temperatura, rede do host e containers |
 | ntopng | análise de tráfego, hosts, protocolos e fluxos visíveis pela interface monitorada |
 
 Essa combinação permite analisar tanto a saúde do servidor quanto o comportamento da rede.

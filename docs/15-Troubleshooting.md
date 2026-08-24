@@ -112,7 +112,7 @@ Se a senha precisar ser redefinida, siga o procedimento de `docs/06-AdGuardHome.
 
 ```bash
 docker ps
-sudo ss -lntup | grep -E '(:80|:3001|:8080|:8090|:9443)\b'
+sudo ss -lntup | grep -E '(:80|:3001|:8080|:9443)\b'
 sudo ufw status numbered
 ```
 
@@ -122,7 +122,6 @@ URLs atuais:
 AdGuard      http://192.168.100.2
 Uptime Kuma  http://192.168.100.2:3001
 HomeLab Web  http://192.168.100.2:8080
-Beszel       http://192.168.100.2:8090
 Portainer    https://192.168.100.2:9443
 ```
 
@@ -143,18 +142,6 @@ Teste de dentro do Kuma:
 docker exec uptime-kuma node -e \
 "fetch('http://192.168.100.2:8080').then(r=>console.log(r.status)).catch(console.error)"
 ```
-
-## Beszel Agent offline
-
-```bash
-docker ps --filter name=beszel-agent
-docker logs --tail 200 beszel-agent
-docker inspect --format '{{.State.Health.Status}}' beszel-agent
-```
-
-Verifique `HUB_URL`, `BESZEL_KEY` e `BESZEL_TOKEN` somente localmente no `.env`. Não compartilhe esses valores.
-
-A arquitetura não usa a porta 45876.
 
 ## Backup falha
 
@@ -244,7 +231,6 @@ Antes de compartilhar logs, remova:
 
 - senhas;
 - hashes bcrypt;
-- tokens e chaves Beszel;
 - MAC addresses e seriais;
 - IP público;
 - outras credenciais ou identificadores únicos.

@@ -73,8 +73,6 @@ A stack `homelab` contém:
 - `portainer`;
 - `adguardhome`;
 - `uptime-kuma`;
-- `beszel`;
-- `beszel-agent`;
 - `homelab-web`;
 - `diun`.
 
@@ -107,8 +105,6 @@ homelab_portainer_data
 homelab_adguard_work
 homelab_adguard_conf
 homelab_uptime_kuma_data
-homelab_beszel_data
-homelab_beszel_agent_data
 homelab_diun_data
 ```
 
@@ -121,8 +117,7 @@ O `homelab-web` é stateless: os arquivos do portal ficam no diretório `web/` d
 - `no-new-privileges:true` é usado nos containers da stack;
 - interfaces web são vinculadas a `192.168.100.2`, não a todas as interfaces;
 - AdGuard Home usa `network_mode: host` por causa de DNS/DHCP;
-- Beszel Agent usa `network_mode: host`, `DISABLE_SSH=true` e não expõe a porta 45876;
-- Portainer e Diun precisam acessar o Docker socket; Beszel Agent usa o socket em modo somente leitura;
+- Portainer e Diun precisam acessar o Docker socket;
 - nenhuma porta Docker é encaminhada no modem.
 
 ## Docker e UFW

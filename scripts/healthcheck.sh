@@ -18,7 +18,7 @@ echo '== Containers =='
 docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 
 echo '== Portas importantes =='
-sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3001|:5335|:8080|:8090|:9443)\b' || true
+sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3001|:5335|:8080|:9443)\b' || true
 
 echo '== DNS =='
 dig +short @127.0.0.1 -p 5335 ubuntu.com
