@@ -76,6 +76,31 @@ sudo ufw allow from "$DOCKER_CIDR" to 192.168.100.2 port 9443 proto tcp comment 
 
 O script `scripts/configure-ufw.sh` detecta tanto a interface LAN quanto a subnet Docker antes de aplicar as regras. Se o script for usado para reconstruir o firewall do zero, a regra do ntopng deve estar presente para manter o acesso à porta `3000/tcp` pela LAN.
 
+## Persistência das regras DOCKER-USER
+
+Os exporters Docker nas portas `8001`, `8081` e `9100` aceitam somente o
+Prometheus em `192.168.100.3`. O UFW continua sendo o firewall principal, e o
+serviço `homelab-docker-user-firewall.service` reaplica as regras específicas
+depois que o Docker cria a cadeia `DOCKER-USER`.
+
+Não instale `iptables-persistent` ou `netfilter-persistent`: no Ubuntu 24.04
+esses pacotes conflitam com o UFW. Use o script idempotente do projeto:
+
+```bash
+sudo bash scripts/persist-docker-user.sh
+systemctl status homelab-docker-user-firewall.service
+sudo iptables -S DOCKER-USER
+```
+
+A porta publicada `8081` é traduzida para `8080` dentro do container cAdvisor
+antes de alcançar `DOCKER-USER`. Por isso sua regra usa
+`conntrack --ctorigdstport 8081 --ctdir ORIGINAL`; o filtro por `--dport 8081`
+não funciona nesse caminho e pode bloquear incorretamente os pacotes de resposta.
+
+O serviço possui `PartOf=docker.service`, permanece habilitado no boot e é
+reiniciado junto com o Docker. O script mantém backups restritos em
+`/var/backups/homelab-firewall/`.
+
 ## IPv6
 
 ```bash
@@ -181,4 +206,6 @@ Se o servidor ganhar VPN, VLAN, segunda interface ou exposição externa, revise
 - [x] ntopng liberado na porta `3000/tcp` somente para a LAN;
 - [x] DHCPv4 limitado à interface LAN;
 - [x] regras Docker -> host validadas com Uptime Kuma;
+- [x] exporters `8001`, `8081` e `9100` restritos ao Prometheus;
+- [x] regras `DOCKER-USER` persistidas por systemd após o Docker;
 - [x] nenhuma porta administrativa encaminhada no modem.
