@@ -130,7 +130,7 @@ restic forget \
   --keep-yearly 2
 
 FINISHED_AT="$(date --iso-8601=seconds)"
-LATEST_SNAPSHOT="$(restic snapshots --host "$HOST_TAG" --tag homelab --latest 1 --json | python3 -c 'import json,sys; data=json.load(sys.stdin); print(data[0]["short_id"] if data else "unknown")')"
+LATEST_SNAPSHOT="$(restic snapshots --host "$HOST_TAG" --tag homelab --json | python3 -c 'import json,sys; data=json.load(sys.stdin); latest=max(data, key=lambda item: item.get("time", ""), default=None); print(latest["short_id"] if latest else "unknown")')"
 
 cat >"$STATE_DIR/last-success" <<EOF
 status=success
