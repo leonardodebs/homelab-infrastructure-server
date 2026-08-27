@@ -42,7 +42,10 @@ sudo ufw allow from 192.168.100.0/24 to any port 3000 proto tcp comment 'ntopng 
 sudo ufw allow from 192.168.100.0/24 to any port 3001 proto tcp comment 'Uptime Kuma LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 8080 proto tcp comment 'HomeLab Web LAN'
 sudo ufw allow from 192.168.100.0/24 to any port 9443 proto tcp comment 'Portainer LAN'
+sudo ufw allow from 192.168.100.0/24 to any port 443 proto tcp comment 'Caddy TLS local LAN'
 ```
+
+A porta `443/tcp` é do Caddy ([docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.md)), um reverse proxy aditivo que soma acesso HTTPS confiável (`*.home.arpa`) sem substituir nenhuma das portas diretas acima.
 
 A porta `3000/tcp` não é mais usada pelo assistente inicial do AdGuard. No estado atual ela é utilizada pela interface web do ntopng e permanece liberada somente para a LAN.
 
@@ -135,6 +138,7 @@ Sockets esperados:
 3001/tcp     Uptime Kuma
 8080/tcp     HomeLab Web
 9443/tcp     Portainer
+443/tcp      Caddy (TLS local)
 127.0.0.1:5335 Unbound
 ```
 
@@ -203,4 +207,5 @@ Se o servidor ganhar VPN, VLAN, segunda interface ou exposição externa, revise
 - [x] regras Docker -> host validadas com Uptime Kuma;
 - [x] exporters `8001`, `8081` e `9100` restritos ao Prometheus;
 - [x] regras `DOCKER-USER` persistidas por systemd após o Docker;
-- [x] nenhuma porta administrativa encaminhada no modem.
+- [x] nenhuma porta administrativa encaminhada no modem;
+- [ ] porta `443/tcp` do Caddy liberada para a LAN (ver [docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.md)).

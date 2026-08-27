@@ -1,0 +1,27 @@
+{
+	auto_https disable_redirects
+}
+
+portainer.home.arpa {
+	reverse_proxy https://{$SERVER_IP}:9443 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+	}
+}
+
+adguard.home.arpa {
+	reverse_proxy {$SERVER_IP}:80
+}
+
+kuma.home.arpa {
+	reverse_proxy {$SERVER_IP}:3001
+}
+
+web.home.arpa {
+	reverse_proxy {$SERVER_IP}:8080
+}
+
+ntop.home.arpa {
+	reverse_proxy {$SERVER_IP}:3000
+}

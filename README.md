@@ -49,6 +49,7 @@ O Wi-Fi do Dell não participa da infraestrutura crítica. Identificadores únic
 | Portainer | gerência Docker | `https://192.168.100.2:9443` |
 | Diun | notificação de imagens | sem porta publicada |
 | Restic | backup/restore | `/srv/backup` |
+| Caddy | HTTPS confiável (CA local) para os serviços acima | `https://*.home.arpa` |
 
 ## Arquitetura
 
@@ -67,6 +68,12 @@ flowchart TD
     Wyse --> Diun[Diun]
     Wyse --> Portal[HomeLab Web :8080]
     Wyse --> Backup[Restic /srv/backup]
+    Wyse --> Caddy[Caddy :443\nTLS local + CA interna]
+    Caddy -.-> AGH
+    Caddy -.-> Portainer
+    Caddy -.-> Kuma
+    Caddy -.-> Ntop
+    Caddy -.-> Portal
 ```
 
 ## Observabilidade
@@ -152,6 +159,7 @@ Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic
 18. [Mídia USB e Restic](docs/17-HD-Externo-Backup.md)
 19. [Horário e agendamentos](docs/18-Horario-Agendamentos.md)
 20. [ntopng e observabilidade de rede](docs/19-ntopng.md)
+21. [Caddy e TLS local](docs/20-Caddy-TLS-Local.md)
 
 ## Estado do projeto
 
@@ -174,6 +182,7 @@ Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic
 - [x] `restic check`
 - [x] restore test
 - [x] documentação técnica consolidada
+- [ ] Caddy com TLS local implantado no servidor (arquivos prontos, deploy pendente)
 - [ ] burn-in de estabilidade por 48–72 horas
 - [ ] evidências/capturas para portfólio
 - [ ] evolução futura para gateway/firewall dedicado ou captura integral da LAN

@@ -90,9 +90,27 @@ services:
     labels:
       - diun.enable=true
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    network_mode: host
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      SERVER_IP: "${SERVER_IP}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    labels:
+      - diun.enable=true
+
 volumes:
   portainer_data:
   adguard_work:
   adguard_conf:
   uptime_kuma_data:
   diun_data:
+  caddy_data:
+  caddy_config:
