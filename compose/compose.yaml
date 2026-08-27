@@ -35,7 +35,7 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "${SERVER_IP}:3001:3001"
+      - "${SERVER_IP}:3101:3001"
     volumes:
       - uptime_kuma_data:/app/data
     labels:
@@ -48,7 +48,7 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "${SERVER_IP}:8080:80"
+      - "${SERVER_IP}:8180:80"
     volumes:
       - ../web:/usr/share/nginx/html:ro
     healthcheck:

@@ -15,11 +15,21 @@ adguard.home.arpa {
 }
 
 kuma.home.arpa {
-	reverse_proxy {$SERVER_IP}:3001
+	reverse_proxy {$SERVER_IP}:3101
+}
+
+https://{$SERVER_IP}:3001 {
+	tls internal
+	reverse_proxy {$SERVER_IP}:3101
 }
 
 web.home.arpa {
-	reverse_proxy {$SERVER_IP}:8080
+	reverse_proxy {$SERVER_IP}:8180
+}
+
+https://{$SERVER_IP}:8080 {
+	tls internal
+	reverse_proxy {$SERVER_IP}:8180
 }
 
 ntop.home.arpa {
