@@ -1,6 +1,7 @@
 compose/.env
 config/restic/restic.env
 config/restic/restic-password
+config/diun/mail-password
 backups/
 restic/
 restore-tests/

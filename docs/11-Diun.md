@@ -14,6 +14,7 @@ Atualmente o Diun acompanha:
 - AdGuard Home;
 - Uptime Kuma;
 - HomeLab Web/Nginx;
+- Caddy;
 - o próprio Diun.
 
 O Unbound não é containerizado e continua sob gerenciamento do APT do Ubuntu.
@@ -98,9 +99,47 @@ Confirme também DHCP e login administrativo.
 
 ## Notificações
 
-A implantação atual usa os logs do Diun como evidência. Notificações externas podem ser adicionadas futuramente.
+O Diun envia e-mail por SMTP (Gmail) quando encontra uma imagem atualizada, além de continuar registrando tudo em log.
 
-Não armazene tokens, senhas ou webhooks diretamente no repositório.
+Configuração (`compose/compose.yaml`, serviço `diun`):
+
+```text
+DIUN_NOTIF_MAIL_HOST=smtp.gmail.com
+DIUN_NOTIF_MAIL_PORT=587
+DIUN_NOTIF_MAIL_SSL=false
+DIUN_NOTIF_MAIL_USERNAME=leonardodebs@gmail.com
+DIUN_NOTIF_MAIL_FROM=leonardodebs@gmail.com
+DIUN_NOTIF_MAIL_TO=leonardodebs@gmail.com
+DIUN_NOTIF_MAIL_PASSWORDFILE=/run/secrets/diun-mail-password
+```
+
+A senha **não fica em variável de ambiente nem no repositório** — segue o mesmo padrão já usado pelo Restic (`config/restic/restic-password`): um arquivo com permissão `600`, fora do git (`.gitignore`), montado somente leitura no container.
+
+Gerar a senha de app do Gmail (conta precisa ter verificação em duas etapas ativa):
+
+1. Acesse <https://myaccount.google.com/apppasswords> logado como `leonardodebs@gmail.com`.
+2. Crie uma senha de app (qualquer nome, ex. "Diun HomeLab").
+3. Copie o valor gerado (16 caracteres, sem espaços).
+
+No servidor, crie o arquivo **sem deixar a senha no histórico do shell nem em nenhum chat**:
+
+```bash
+install -d -m 700 ~/homelab-infrastructure-server/config/diun
+( umask 177; cat > ~/homelab-infrastructure-server/config/diun/mail-password )
+# cole a senha de app, Enter, depois Ctrl+D
+chmod 600 ~/homelab-infrastructure-server/config/diun/mail-password
+```
+
+Depois:
+
+```bash
+cd ~/homelab-infrastructure-server
+git pull
+docker compose --env-file compose/.env -f compose/compose.yaml up -d diun
+docker logs --tail 50 diun
+```
+
+Erros de autenticação SMTP aparecem nos logs assim que o Diun tenta usar o notificador — se a senha de app estiver errada ou a conta sem 2FA, o log mostra a falha na primeira checagem (`DIUN_WATCH_RUNONSTARTUP=true` garante que isso é testado imediatamente).
 
 ## Segurança
 

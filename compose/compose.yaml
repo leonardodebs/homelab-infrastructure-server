@@ -78,9 +78,17 @@ services:
       DIUN_WATCH_RUNONSTARTUP: "true"
       DIUN_PROVIDERS_DOCKER: "true"
       DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: "false"
+      DIUN_NOTIF_MAIL_HOST: smtp.gmail.com
+      DIUN_NOTIF_MAIL_PORT: "587"
+      DIUN_NOTIF_MAIL_SSL: "false"
+      DIUN_NOTIF_MAIL_USERNAME: leonardodebs@gmail.com
+      DIUN_NOTIF_MAIL_PASSWORDFILE: /run/secrets/diun-mail-password
+      DIUN_NOTIF_MAIL_FROM: leonardodebs@gmail.com
+      DIUN_NOTIF_MAIL_TO: leonardodebs@gmail.com
     volumes:
       - diun_data:/data
       - /var/run/docker.sock:/var/run/docker.sock
+      - ../config/diun/mail-password:/run/secrets/diun-mail-password:ro
     healthcheck:
       test: ["CMD", "diun", "healthcheck"]
       interval: 30s
