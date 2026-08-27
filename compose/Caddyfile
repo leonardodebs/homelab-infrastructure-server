@@ -23,7 +23,7 @@ adguard.home.arpa {
 	reverse_proxy {$SERVER_IP}:8280
 }
 
-https://{$SERVER_IP}:80 {
+{$SERVER_IP}:80 {
 	tls internal
 	reverse_proxy {$SERVER_IP}:8280
 }
