@@ -38,18 +38,20 @@ O Wi-Fi do Dell não participa da infraestrutura crítica. Identificadores únic
 
 ## Serviços atuais
 
-| Serviço | Função | Acesso |
-|---|---|---|
-| AdGuard Home | DNS + DHCPv4 | `http://192.168.100.2` |
-| Unbound | DNS recursivo/cache | `127.0.0.1:5335` |
-| ntopng | análise de tráfego/hosts | `http://192.168.100.2:3000` |
-| Uptime Kuma | disponibilidade | `http://192.168.100.2:3001` |
-| HomeLab Web | portal interno | `http://192.168.100.2:8080` |
-| Grafana | métricas e alertas | `http://192.168.100.3:3000` |
-| Portainer | gerência Docker | `https://192.168.100.2:9443` |
-| Diun | notificação de imagens | sem porta publicada |
-| Restic | backup/restore | `/srv/backup` |
-| Caddy | HTTPS confiável (CA local) para os serviços acima | `https://*.home.arpa` |
+| Serviço | Função | Acesso público (via Caddy, TLS confiável) | Porta interna real |
+|---|---|---|---|
+| AdGuard Home | DNS + DHCPv4 | `https://192.168.100.2` / `https://adguard.home.arpa` | `192.168.100.2:8280` |
+| Unbound | DNS recursivo/cache | — | `127.0.0.1:5335` |
+| ntopng | análise de tráfego/hosts | `https://192.168.100.2:3000` / `https://ntop.home.arpa` | `192.168.100.2:3300` |
+| Uptime Kuma | disponibilidade | `https://192.168.100.2:3001` / `https://kuma.home.arpa` | `192.168.100.2:3101` |
+| HomeLab Web | portal interno | `https://192.168.100.2:8080` / `https://web.home.arpa` | `192.168.100.2:8180` |
+| Grafana | métricas e alertas | `http://192.168.100.3:3000` | — |
+| Portainer | gerência Docker | `https://192.168.100.2:9443` / `https://portainer.home.arpa` | `192.168.100.2:9444` |
+| Diun | notificação de imagens | sem porta publicada | — |
+| Restic | backup/restore | `/srv/backup` | — |
+| Caddy | reverse proxy + CA interna, termina TLS em todas as portas acima | `:443` (`*.home.arpa`) e nas próprias portas públicas de cada serviço | — |
+
+O certificado confiável exige a CA local do Caddy instalada no dispositivo cliente — veja [docs/20-Caddy-TLS-Local.md](docs/20-Caddy-TLS-Local.md).
 
 ## Arquitetura
 
@@ -58,22 +60,18 @@ flowchart TD
     Internet --> Huawei[Huawei HG8145V5-V2\n192.168.100.1\nGateway + NAT + Wi-Fi]
     Huawei --> Wyse[Dell Wyse\nhomelab\n192.168.100.2]
     Huawei --> Clientes[Notebooks, celulares, TVs]
-    Clientes -->|DHCP + DNS| AGH[AdGuard Home]
+    Clientes -->|DHCP + DNS| AGH[AdGuard Home\nDNS 53]
     AGH --> Unbound[Unbound\n127.0.0.1:5335]
     Unbound --> Internet
-    Wyse --> Ntop[ntopng :3000]
-    Wyse --> Kuma[Uptime Kuma :3001]
+    Clientes -->|HTTPS 80/3000/3001/8080/9443/443| Caddy[Caddy\nTLS local + CA interna]
+    Caddy --> AGH2[AdGuard Web\n192.168.100.2:8280]
+    Caddy --> Ntop[ntopng\n192.168.100.2:3300]
+    Caddy --> Kuma[Uptime Kuma\n192.168.100.2:3101]
+    Caddy --> Portal[HomeLab Web\n192.168.100.2:8180]
+    Caddy --> Portainer[Portainer\n192.168.100.2:9444]
     Wyse --> Grafana[Grafana no Lenovo :3000]
-    Wyse --> Portainer[Portainer :9443]
     Wyse --> Diun[Diun]
-    Wyse --> Portal[HomeLab Web :8080]
     Wyse --> Backup[Restic /srv/backup]
-    Wyse --> Caddy[Caddy :443\nTLS local + CA interna]
-    Caddy -.-> AGH
-    Caddy -.-> Portainer
-    Caddy -.-> Kuma
-    Caddy -.-> Ntop
-    Caddy -.-> Portal
 ```
 
 ## Observabilidade
@@ -182,7 +180,8 @@ Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic
 - [x] `restic check`
 - [x] restore test
 - [x] documentação técnica consolidada
-- [ ] Caddy com TLS local implantado no servidor (arquivos prontos, deploy pendente)
+- [x] Caddy com TLS local implantado, incluindo HTTPS confiável nas portas públicas diretas (não só nos hostnames `.home.arpa`)
+- [ ] monitores do Uptime Kuma reapontados para as portas internas após a migração do Caddy (ver [docs/20](docs/20-Caddy-TLS-Local.md))
 - [ ] burn-in de estabilidade por 48–72 horas
 - [ ] evidências/capturas para portfólio
 - [ ] evolução futura para gateway/firewall dedicado ou captura integral da LAN

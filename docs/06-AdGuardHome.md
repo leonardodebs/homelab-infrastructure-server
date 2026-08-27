@@ -5,12 +5,23 @@ O AdGuard Home roda em `network_mode: host` para fornecer DNS, DHCPv4 e identifi
 ## Estado atual
 
 ```text
-Web       : http://192.168.100.2
-DNS       : 192.168.100.2:53 TCP/UDP
-DHCPv4    : UDP/67
-Upstream  : 127.0.0.1:5335
-Domínio   : home.arpa
+Web (público, via Caddy) : https://192.168.100.2 (porta 80, TLS confiável)
+Web (interno real)       : http://192.168.100.2:8280
+DNS                      : 192.168.100.2:53 TCP/UDP
+DHCPv4                   : UDP/67
+Upstream                 : 127.0.0.1:5335
+Domínio                  : home.arpa
 ```
+
+Desde o [capítulo 20](20-Caddy-TLS-Local.md), a interface web do AdGuard não fica mais diretamente na porta `80` — o `http.address` em `AdGuardHome.yaml` foi movido para `192.168.100.2:8280`, e o Caddy assumiu a porta `80` pública terminando TLS com certificado de IP confiável. A porta DNS (`53`) nunca foi alterada nessa migração.
+
+Acesso de emergência (sem depender do Caddy nem do DNS local), via túnel SSH:
+
+```bash
+ssh -L 8280:192.168.100.2:8280 leonardo@192.168.100.2
+```
+
+Depois abra `http://127.0.0.1:8280` localmente.
 
 O DHCP do Huawei está desativado e o AdGuard Home é o servidor DHCPv4 da rede.
 

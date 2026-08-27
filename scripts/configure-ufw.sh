@@ -80,9 +80,9 @@ ufw allow from "$LAN_CIDR" to any port 443 proto tcp comment 'Caddy TLS local LA
 
 ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 53 proto tcp comment 'Docker monitor DNS TCP'
 ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 53 proto udp comment 'Docker monitor DNS UDP'
-ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 80 proto tcp comment 'Docker monitor AdGuard Web'
-ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 8080 proto tcp comment 'Docker monitor HomeLab Web'
-ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 9443 proto tcp comment 'Docker monitor Portainer'
+ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 8280 proto tcp comment 'Docker monitor AdGuard Web'
+ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 8180 proto tcp comment 'Docker monitor HomeLab Web'
+ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 9444 proto tcp comment 'Docker monitor Portainer'
 
 ok "AdGuard Web TCP/80"
 ok "ntopng TCP/3000"

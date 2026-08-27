@@ -12,13 +12,16 @@ O `ntopng` foi implantado para acrescentar visibilidade de tráfego de rede ao H
 - porta TCP `3000` liberada no UFW para a rede `192.168.100.0/24`;
 - monitoramento associado à interface Ethernet principal do HomeLab;
 - rede local `192.168.100.0/24` reconhecida como rede interna;
-- dashboard validado e operacional.
+- dashboard validado e operacional;
+- desde o [capítulo 20](20-Caddy-TLS-Local.md), a porta pública `3000` é servida com TLS confiável pelo Caddy; o ntopng em si migrou seu `--http-port` (`-w=` em `/etc/ntopng/ntopng.conf`) para `3300`.
 
 Acesso administrativo:
 
 ```text
-http://192.168.100.2:3000
+https://192.168.100.2:3000
 ```
+
+Porta interna real (usada pelo Caddy): `192.168.100.2:3300`.
 
 ## Papel na observabilidade
 

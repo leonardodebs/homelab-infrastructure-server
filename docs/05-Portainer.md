@@ -30,7 +30,7 @@ Abra no navegador:
 https://192.168.100.2:9443
 ```
 
-O certificado inicial é autoassinado. Confirme a exceção apenas na rede local.
+Desde o [capítulo 20](20-Caddy-TLS-Local.md), quem responde nessa porta é o Caddy, com certificado emitido pela CA interna (confiável, sem aviso de segurança, desde que a CA esteja instalada no dispositivo). O Portainer em si só é alcançável internamente em `192.168.100.2:9444` (porta publicada pelo compose), onde continua servindo seu próprio HTTPS autoassinado — é para esse endereço interno que o Caddy encaminha, ignorando a validade do certificado apenas nesse trecho interno (`tls_insecure_skip_verify`).
 
 ## Primeira configuração
 
@@ -44,7 +44,8 @@ O certificado inicial é autoassinado. Confirme a exceção apenas na rede local
 ```bash
 docker ps --filter name=portainer
 docker logs --tail 50 portainer
-curl -kI https://192.168.100.2:9443
+curl -I https://192.168.100.2:9443
+curl -kI https://192.168.100.2:9444
 ```
 
 ## Backup

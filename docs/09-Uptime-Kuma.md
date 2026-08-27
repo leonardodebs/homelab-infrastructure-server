@@ -5,8 +5,10 @@ O Uptime Kuma monitora disponibilidade e tempo de resposta dos componentes do Ho
 ## Acesso
 
 ```text
-http://192.168.100.2:3001
+https://192.168.100.2:3001
 ```
+
+Desde o [capítulo 20](20-Caddy-TLS-Local.md), essa porta é servida pelo Caddy com certificado confiável. O container em si migrou para a porta interna `192.168.100.2:3101` (publicada pelo compose), usada pelo Caddy e pelos checks internos do próprio Kuma.
 
 Instalação/recriação:
 
@@ -35,18 +37,20 @@ A implantação opera com sete monitores:
 
 4. **AdGuard Web**
    - tipo: HTTP;
-   - URL: `http://192.168.100.2`.
+   - URL: `http://192.168.100.2:8280` (porta interna real; a porta pública `80` agora é TLS via Caddy).
 
 5. **Portainer**
    - tipo: HTTPS;
-   - URL: `https://192.168.100.2:9443`;
+   - URL: `https://192.168.100.2:9444` (porta interna real; a porta pública `9443` agora é TLS via Caddy);
    - certificado autoassinado ignorado somente neste monitor.
 
 6. **HomeLab Web**
    - tipo: HTTP;
-   - URL: `http://192.168.100.2:8080`.
+   - URL: `http://192.168.100.2:8180` (porta interna real; a porta pública `8080` agora é TLS via Caddy).
 
 Todos os monitores foram validados após o ajuste do UFW para permitir que a rede Docker `homelab_default` alcance as portas monitoradas no IP do host.
+
+> Desde o [capítulo 20](20-Caddy-TLS-Local.md), os monitores 4, 5 e 6 apontam para as portas internas dos serviços, não mais para as portas públicas — as públicas (`80`, `9443`, `8080`) passaram a ser terminadas em TLS pelo Caddy e não respondem mais como antes a um simples GET HTTP/HTTPS direto sem SNI/porta corretos.
 
 ## Particularidade Docker -> host
 
@@ -66,14 +70,15 @@ docker network inspect homelab_default \
 ```bash
 docker ps --filter name=uptime-kuma
 docker logs --tail 100 uptime-kuma
-curl -I http://192.168.100.2:3001
+curl -I https://192.168.100.2:3001
+curl -I http://192.168.100.2:3101
 ```
 
 Teste direto de dentro do container quando houver timeout inesperado:
 
 ```bash
 docker exec uptime-kuma node -e \
-"fetch('http://192.168.100.2:8080').then(r=>console.log(r.status)).catch(console.error)"
+"fetch('http://192.168.100.2:8180').then(r=>console.log(r.status)).catch(console.error)"
 ```
 
 ## Backup
@@ -100,4 +105,5 @@ Ele é incluído pelo backup Restic do projeto. Durante o snapshot, o container 
 - [x] checks DNS e HTTP funcionando;
 - [x] Portainer monitorado com certificado autoassinado;
 - [x] regras Docker -> host do UFW validadas;
-- [x] volume incluído no Restic.
+- [x] volume incluído no Restic;
+- [ ] monitores 4 (AdGuard Web), 5 (Portainer) e 6 (HomeLab Web) reapontados para as portas internas novas (8280/9444/8180) depois da migração do capítulo 20.
