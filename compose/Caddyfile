@@ -3,7 +3,16 @@
 }
 
 portainer.home.arpa {
-	reverse_proxy https://{$SERVER_IP}:9443 {
+	reverse_proxy https://{$SERVER_IP}:9444 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+	}
+}
+
+https://{$SERVER_IP}:9443 {
+	tls internal
+	reverse_proxy https://{$SERVER_IP}:9444 {
 		transport http {
 			tls_insecure_skip_verify
 		}
