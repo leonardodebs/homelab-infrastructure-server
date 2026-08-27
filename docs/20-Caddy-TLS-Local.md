@@ -24,6 +24,12 @@ Além disso, o Caddy escuta `443` para os hostnames `*.home.arpa` (`portainer`, 
 
 DNS (porta `53`) nunca é alterado por nada neste capítulo.
 
+**Portainer e CSRF atrás do proxy.** Por padrão, o `reverse_proxy` do Caddy reescreve o cabeçalho `Host` para o endereço do upstream (`192.168.100.2:9444`). O Portainer valida `Origin`/`Referer` contra esse `Host` recebido e rejeita login com `"Failed to validate Origin or Referer... origin invalid"` quando eles não batem com a porta pública (`9443`) que o navegador usou. A flag oficial `--trusted-origins` do Portainer **não resolve isso** — tem bug conhecido e sem correção que rejeita qualquer origem com porta ([portainer/portainer#12751](https://github.com/portainer/portainer/issues/12751)), derrubando o container com `"invalid url for trusted origin"`. A correção é forçar o Caddy a preservar o `Host` original do cliente:
+```caddyfile
+header_up Host {http.request.hostport}
+```
+Já aplicado nos dois blocos do Portainer no `compose/Caddyfile`.
+
 ## Pré-requisitos
 
 - stack principal (`compose/compose.yaml`) implantada e saudável;
