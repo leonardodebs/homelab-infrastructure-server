@@ -2,15 +2,15 @@
 
 ## Objetivo
 
-Servir Portainer, AdGuard Home, Uptime Kuma, o site estático e o ntopng com HTTPS confiável, tanto por hostname (`https://*.home.arpa`) quanto pelo IP direto nas mesmas portas de sempre (`80`, `3000`, `3001`, `8080`, `9443`), usando um único reverse proxy (Caddy) e uma CA local emitida automaticamente por ele mesmo.
+Servir Portainer, AdGuard Home, Uptime Kuma, o site estático e o ntopng com HTTPS confiável, tanto por hostname (`https://*.home.arpa`) quanto pelo IP direto, usando um único reverse proxy (Caddy) e uma CA local emitida automaticamente por ele mesmo.
 
 ## Como funciona
 
 O Caddy roda em `network_mode: host` (mesmo modelo do AdGuard) e assumiu as portas públicas que antes pertenciam diretamente a cada serviço. Cada serviço migrou para uma porta interna, ainda vinculada a `192.168.100.2` (não `127.0.0.1`), porque o Uptime Kuma monitora esses serviços pela rede Docker e precisa continuar alcançando-os por IP.
 
-| Serviço | Porta pública (Caddy, TLS) | Porta interna real |
+| Serviço | Porta pública HTTPS (Caddy) | Porta interna real |
 |---|---|---|
-| AdGuard Home | `80` | `192.168.100.2:8280` |
+| AdGuard Home | `8443` (a `80` continua HTTP puro — ver nota abaixo) | `192.168.100.2:8280` |
 | ntopng | `3000` | `192.168.100.2:3300` |
 | Uptime Kuma | `3001` | `192.168.100.2:3101` |
 | HomeLab Web | `8080` | `192.168.100.2:8180` |
@@ -18,7 +18,9 @@ O Caddy roda em `network_mode: host` (mesmo modelo do AdGuard) e assumiu as port
 
 Além disso, o Caddy escuta `443` para os hostnames `*.home.arpa` (`portainer`, `adguard`, `kuma`, `web`, `ntop`).
 
-**Certificado por IP exige SAN de IP.** O motivo do Portainer sempre mostrar "Não seguro" mesmo com HTTPS é que o certificado autoassinado dele tem `IP Address: 0.0.0.0` como SAN — não bate com `192.168.100.2`. O Caddy 2.11+ emite certificados com SAN de IP pela CA interna quando o bloco do Caddyfile é endereçado pelo próprio IP:porta (sem usar `https://` explícito na porta `80`, que o Caddy rejeita por "violar convenção" — use só `IP:80 { tls internal ... }`).
+**Certificado por IP exige SAN de IP.** O motivo do Portainer sempre mostrar "Não seguro" mesmo com HTTPS é que o certificado autoassinado dele tem `IP Address: 0.0.0.0` como SAN — não bate com `192.168.100.2`. O Caddy 2.11+ emite certificados com SAN de IP pela CA interna quando o bloco do Caddyfile é endereçado pelo próprio IP:porta.
+
+**Limitação real do Caddy na porta 80**: o Caddy trata a porta `80` como convenção fixa de HTTP puro e ignora silenciosamente qualquer diretiva `tls` colocada num bloco endereçado por `IP:80` — o certificado nunca é aplicado e a porta continua em texto puro (confirmado: logs mostravam "HTTP/2 skipped... requires TLS" e a resposta chegava sem criptografia mesmo com `tls internal` no bloco). Por isso o AdGuard Home ganhou uma porta HTTPS alternativa (`8443`) em vez de usar a `80` — a `80` continua exatamente como sempre foi (HTTP puro, redirecionando para `/login.html`). Quem quiser cadeado no AdGuard usa `https://192.168.100.2:8443` ou `https://adguard.home.arpa`.
 
 DNS (porta `53`) nunca é alterado por nada neste capítulo.
 
@@ -43,9 +45,10 @@ docker logs --tail 50 caddy
 
 ```bash
 sudo ufw allow from 192.168.100.0/24 to any port 443 proto tcp comment 'Caddy TLS local LAN'
+sudo ufw allow from 192.168.100.0/24 to any port 8443 proto tcp comment 'AdGuard HTTPS (Caddy) LAN'
 ```
 
-As portas `80`, `3000`, `3001`, `8080` e `9443` já estavam liberadas para a LAN — não precisam de regra nova, só trocaram de "quem responde" (serviço direto → Caddy).
+As portas `80`, `3000`, `3001`, `8080` e `9443` já estavam liberadas para a LAN — não precisam de regra nova, só trocaram de "quem responde" (serviço direto → Caddy). `8443` é porta nova (HTTPS alternativo do AdGuard, já que a `80` não pode virar TLS — ver acima).
 
 ## 3. Mover cada serviço para a porta interna
 
@@ -67,7 +70,7 @@ Repita para cada serviço, testando antes de seguir pro próximo (evita quebrar 
   dig @192.168.100.2 cloudflare.com
   ```
 
-A cada serviço migrado, atualize o bloco correspondente no `compose/Caddyfile` (adiciona um bloco `IP:porta { tls internal \n reverse_proxy IP:porta-interna }`) e rode `docker restart caddy`.
+A cada serviço migrado, atualize o bloco correspondente no `compose/Caddyfile` (adiciona um bloco `https://IP:porta { tls internal \n reverse_proxy IP:porta-interna }`) e rode `docker restart caddy`. **Exceção: porta 80** não aceita `tls` (ver limitação acima) — para o AdGuard, o bloco de HTTPS por IP usa a porta `8443`, não a `80`.
 
 ## 4. Ajustar as regras "Docker monitor" do UFW
 
@@ -127,7 +130,8 @@ Repita em outros dispositivos que forem acessar os serviços via HTTPS — em An
 
 - [x] `docker ps` mostra `caddy` `running`;
 - [x] porta `443/tcp` liberada no UFW para a LAN;
-- [x] `https://192.168.100.2` (porta 80), `:3000`, `:3001`, `:8080`, `:9443` abrem sem aviso de certificado depois de instalar a CA;
+- [x] `https://192.168.100.2:8443` (AdGuard), `:3000`, `:3001`, `:8080`, `:9443` abrem sem aviso de certificado depois de instalar a CA;
+- [x] `http://192.168.100.2` (porta 80) continua respondendo em HTTP puro, sem regressão;
 - [x] `https://*.home.arpa` funcionam sem alteração;
 - [x] DNS (`53`) não foi afetado em nenhuma etapa;
 - [x] regras "Docker monitor" do UFW atualizadas para as portas internas novas;

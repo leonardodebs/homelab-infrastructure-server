@@ -40,7 +40,7 @@ O Wi-Fi do Dell não participa da infraestrutura crítica. Identificadores únic
 
 | Serviço | Função | Acesso público (via Caddy, TLS confiável) | Porta interna real |
 |---|---|---|---|
-| AdGuard Home | DNS + DHCPv4 | `https://192.168.100.2` / `https://adguard.home.arpa` | `192.168.100.2:8280` |
+| AdGuard Home | DNS + DHCPv4 | `http://192.168.100.2` (sem TLS — porta 80 não suporta) ou `https://192.168.100.2:8443` / `https://adguard.home.arpa` | `192.168.100.2:8280` |
 | Unbound | DNS recursivo/cache | — | `127.0.0.1:5335` |
 | ntopng | análise de tráfego/hosts | `https://192.168.100.2:3000` / `https://ntop.home.arpa` | `192.168.100.2:3300` |
 | Uptime Kuma | disponibilidade | `https://192.168.100.2:3001` / `https://kuma.home.arpa` | `192.168.100.2:3101` |
@@ -63,7 +63,7 @@ flowchart TD
     Clientes -->|DHCP + DNS| AGH[AdGuard Home\nDNS 53]
     AGH --> Unbound[Unbound\n127.0.0.1:5335]
     Unbound --> Internet
-    Clientes -->|HTTPS 80/3000/3001/8080/9443/443| Caddy[Caddy\nTLS local + CA interna]
+    Clientes -->|HTTPS 3000/3001/8080/9443/8443/443| Caddy[Caddy\nTLS local + CA interna]
     Caddy --> AGH2[AdGuard Web\n192.168.100.2:8280]
     Caddy --> Ntop[ntopng\n192.168.100.2:3300]
     Caddy --> Kuma[Uptime Kuma\n192.168.100.2:3101]

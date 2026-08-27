@@ -5,15 +5,16 @@ O AdGuard Home roda em `network_mode: host` para fornecer DNS, DHCPv4 e identifi
 ## Estado atual
 
 ```text
-Web (público, via Caddy) : https://192.168.100.2 (porta 80, TLS confiável)
-Web (interno real)       : http://192.168.100.2:8280
+Web (HTTP, porta de sempre) : http://192.168.100.2 (porta 80, sem TLS — Caddy não termina TLS na 80)
+Web (HTTPS confiável)       : https://192.168.100.2:8443 ou https://adguard.home.arpa
+Web (interno real)          : http://192.168.100.2:8280
 DNS                      : 192.168.100.2:53 TCP/UDP
 DHCPv4                   : UDP/67
 Upstream                 : 127.0.0.1:5335
 Domínio                  : home.arpa
 ```
 
-Desde o [capítulo 20](20-Caddy-TLS-Local.md), a interface web do AdGuard não fica mais diretamente na porta `80` — o `http.address` em `AdGuardHome.yaml` foi movido para `192.168.100.2:8280`, e o Caddy assumiu a porta `80` pública terminando TLS com certificado de IP confiável. A porta DNS (`53`) nunca foi alterada nessa migração.
+Desde o [capítulo 20](20-Caddy-TLS-Local.md), a interface web do AdGuard não fica mais diretamente na porta `80` — o `http.address` em `AdGuardHome.yaml` foi movido para `192.168.100.2:8280`. O Caddy assumiu a porta `80` pública, mas o Caddy não consegue terminar TLS nessa porta específica (limitação do próprio Caddy — ver [capítulo 20](20-Caddy-TLS-Local.md)), então `80` continua em HTTP puro; o certificado confiável por IP fica na porta `8443`. A porta DNS (`53`) nunca foi alterada nessa migração.
 
 Acesso de emergência (sem depender do Caddy nem do DNS local), via túnel SSH:
 
