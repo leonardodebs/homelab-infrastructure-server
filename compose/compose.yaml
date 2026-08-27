@@ -5,7 +5,6 @@ services:
     image: portainer/portainer-ce:2.39.5@sha256:f6bc23d1695530a609563fd65c180aaafec0fc02e019d5fc63d16b6fbe83addd
     container_name: portainer
     restart: unless-stopped
-    command: ["--trusted-origins=https://${SERVER_IP}:9443,https://portainer.home.arpa"]
     security_opt:
       - no-new-privileges:true
     ports:
