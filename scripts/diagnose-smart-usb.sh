@@ -17,7 +17,7 @@ fail() {
   exit 1
 }
 
-[[ $EUID -eq 0 ]] || exec sudo "$0" "$@"
+[[ $EUID -eq 0 ]] || exec sudo bash "$0" "$@"
 
 command -v smartctl >/dev/null 2>&1 || fail "smartctl nao instalado (apt install smartmontools)."
 
