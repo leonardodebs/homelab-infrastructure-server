@@ -167,7 +167,7 @@ Preferencialmente, em serviços críticos, atualize um por vez e valide antes de
 Depois de atualizar:
 
 ```bash
-dig @192.168.100.2 ubuntu.com
+dig @192.168.15.2 ubuntu.com
 docker logs --tail 100 adguardhome
 sudo ss -lunp | grep -E ':(53|67)\b'
 ```
@@ -188,7 +188,7 @@ Depois:
 
 ```bash
 dig @127.0.0.1 -p 5335 ubuntu.com
-dig @192.168.100.2 ubuntu.com
+dig @192.168.15.2 ubuntu.com
 ```
 
 ## Limpeza segura do Docker

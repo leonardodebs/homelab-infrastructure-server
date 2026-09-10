@@ -27,7 +27,7 @@ systemctl restart systemd-journald
 
 ufw default deny incoming
 ufw default allow outgoing
-ufw allow from 192.168.100.0/24 to any port 22 proto tcp comment 'SSH LAN'
+ufw allow from 192.168.15.0/24 to any port 22 proto tcp comment 'SSH LAN'
 ufw --force enable
 
 echo "Bootstrap concluído para o host homelab. Configure o IP estático antes de continuar."

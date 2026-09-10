@@ -5,21 +5,21 @@ O AdGuard Home roda em `network_mode: host` para fornecer DNS, DHCPv4 e identifi
 ## Estado atual
 
 ```text
-Web (HTTP, porta de sempre) : http://192.168.100.2 (porta 80, sem TLS — Caddy não termina TLS na 80)
-Web (HTTPS confiável)       : https://192.168.100.2:8443 ou https://adguard.home.arpa
-Web (interno real)          : http://192.168.100.2:8280
-DNS                      : 192.168.100.2:53 TCP/UDP
+Web (HTTP, porta de sempre) : http://192.168.15.2 (porta 80, sem TLS — Caddy não termina TLS na 80)
+Web (HTTPS confiável)       : https://192.168.15.2:8443 ou https://adguard.home.arpa
+Web (interno real)          : http://192.168.15.2:8280
+DNS                      : 192.168.15.2:53 TCP/UDP
 DHCPv4                   : UDP/67
 Upstream                 : 127.0.0.1:5335
 Domínio                  : home.arpa
 ```
 
-Desde o [capítulo 20](20-Caddy-TLS-Local.md), a interface web do AdGuard não fica mais diretamente na porta `80` — o `http.address` em `AdGuardHome.yaml` foi movido para `192.168.100.2:8280`. O Caddy assumiu a porta `80` pública, mas o Caddy não consegue terminar TLS nessa porta específica (limitação do próprio Caddy — ver [capítulo 20](20-Caddy-TLS-Local.md)), então `80` continua em HTTP puro; o certificado confiável por IP fica na porta `8443`. A porta DNS (`53`) nunca foi alterada nessa migração.
+Desde o [capítulo 20](20-Caddy-TLS-Local.md), a interface web do AdGuard não fica mais diretamente na porta `80` — o `http.address` em `AdGuardHome.yaml` foi movido para `192.168.15.2:8280`. O Caddy assumiu a porta `80` pública, mas o Caddy não consegue terminar TLS nessa porta específica (limitação do próprio Caddy — ver [capítulo 20](20-Caddy-TLS-Local.md)), então `80` continua em HTTP puro; o certificado confiável por IP fica na porta `8443`. A porta DNS (`53`) nunca foi alterada nessa migração.
 
 Acesso de emergência (sem depender do Caddy nem do DNS local), via túnel SSH:
 
 ```bash
-ssh -L 8280:192.168.100.2:8280 leonardo@192.168.100.2
+ssh -L 8280:192.168.15.2:8280 leonardo@192.168.15.2
 ```
 
 Depois abra `http://127.0.0.1:8280` localmente.
@@ -37,7 +37,7 @@ docker logs --tail 100 adguardhome
 sudo ss -lntup | grep -E '(:53|:67|:80)\b'
 ```
 
-O DNS deve escutar em `192.168.100.2:53`. O Unbound permanece somente em `127.0.0.1:5335`.
+O DNS deve escutar em `192.168.15.2:53`. O Unbound permanece somente em `127.0.0.1:5335`.
 
 ## Upstream DNS
 
@@ -59,15 +59,15 @@ No servidor:
 
 ```bash
 dig @127.0.0.1 -p 5335 ubuntu.com
-dig @192.168.100.2 ubuntu.com
-dig @192.168.100.2 doubleclick.net
+dig @192.168.15.2 ubuntu.com
+dig @192.168.15.2 doubleclick.net
 ```
 
 No Windows:
 
 ```powershell
-nslookup ubuntu.com 192.168.100.2
-nslookup doubleclick.net 192.168.100.2
+nslookup ubuntu.com 192.168.15.2
+nslookup doubleclick.net 192.168.15.2
 ```
 
 O domínio comum deve resolver normalmente. Um domínio bloqueado pode retornar `0.0.0.0`, `::` ou outra resposta de bloqueio conforme a configuração do AdGuard.
@@ -79,10 +79,10 @@ O AdGuard identifica clientes usando leases DHCP/hostnames e registra as consult
 Configuração atual de referência:
 
 ```text
-Gateway       : 192.168.100.1
-Pool DHCPv4   : 192.168.100.50 - 192.168.100.200
+Gateway       : 192.168.15.1
+Pool DHCPv4   : 192.168.15.50 - 192.168.15.200
 Lease         : 86400 segundos
-DNS entregue  : 192.168.100.2
+DNS entregue  : 192.168.15.2
 Domínio local : home.arpa
 DHCPv6        : desativado
 ```
@@ -182,7 +182,7 @@ unset HASH
 ## Validação concluída
 
 - [x] painel acessível na LAN;
-- [x] DNS em `192.168.100.2:53`;
+- [x] DNS em `192.168.15.2:53`;
 - [x] consultas aparecem no Query Log;
 - [x] upstream somente `127.0.0.1:5335`;
 - [x] domínio de anúncio bloqueado;

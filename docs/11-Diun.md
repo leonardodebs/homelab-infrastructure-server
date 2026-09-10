@@ -90,7 +90,7 @@ Atualize um serviço por vez quando a mudança for sensível.
 Depois de qualquer atualização do AdGuard:
 
 ```bash
-dig @192.168.100.2 ubuntu.com
+dig @192.168.15.2 ubuntu.com
 sudo ss -lunp | grep -E ':(53|67)\b'
 docker logs --tail 100 adguardhome
 ```

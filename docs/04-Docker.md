@@ -115,7 +115,7 @@ O `homelab-web` é stateless: os arquivos do portal ficam no diretório `web/` d
 ## Segurança
 
 - `no-new-privileges:true` é usado nos containers da stack;
-- interfaces web são vinculadas a `192.168.100.2`, não a todas as interfaces;
+- interfaces web são vinculadas a `192.168.15.2`, não a todas as interfaces;
 - AdGuard Home usa `network_mode: host` por causa de DNS/DHCP;
 - Portainer e Diun precisam acessar o Docker socket;
 - nenhuma porta Docker é encaminhada no modem.

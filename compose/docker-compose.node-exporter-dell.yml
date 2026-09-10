@@ -1,7 +1,7 @@
 # =============================================================================
-# Node Exporter do Dell (homelab, 192.168.100.2)
+# Node Exporter do Dell (homelab, 192.168.15.2)
 # =============================================================================
-# Expoe metricas do host para o Prometheus do Lenovo em 192.168.100.3.
+# Expoe metricas do host para o Prometheus do Lenovo em 192.168.15.3.
 # O container nao recebe acesso ao Docker socket e todos os mounts sao read-only.
 # =============================================================================
 
@@ -30,7 +30,7 @@ services:
         bind:
           propagation: rslave
     ports:
-      - "192.168.100.2:9100:9100"
+      - "192.168.15.2:9100:9100"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9100/metrics >/dev/null 2>&1 || exit 1"]
       interval: 1m
@@ -71,7 +71,7 @@ services:
       - /var/lib/docker:/var/lib/docker:ro
       - /dev/disk:/dev/disk:ro
     ports:
-      - "192.168.100.2:8081:8080"
+      - "192.168.15.2:8081:8080"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz 2>/dev/null | grep -qx ok"]
       interval: 1m

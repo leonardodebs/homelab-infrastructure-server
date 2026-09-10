@@ -6,12 +6,12 @@ O Beszel Hub e o Beszel Agent foram aposentados em 24/08/2026 depois da
 validação do dashboard `Dell Overview` no Grafana do Lenovo. O monitoramento do
 Dell agora usa:
 
-- Node Exporter em `192.168.100.2:9100`;
-- cAdvisor em `192.168.100.2:8081`;
-- Prometheus e Grafana em `192.168.100.3`;
+- Node Exporter em `192.168.15.2:9100`;
+- cAdvisor em `192.168.15.2:8081`;
+- Prometheus e Grafana em `192.168.15.3`;
 - alertas enviados por e-mail pelo Alertmanager.
 
-As portas dos exporters aceitam somente a origem `192.168.100.3`. A antiga
+As portas dos exporters aceitam somente a origem `192.168.15.3`. A antiga
 porta `8090/tcp` foi removida do Compose e do UFW.
 
 ## Backup de retirada

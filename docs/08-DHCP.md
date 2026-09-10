@@ -5,12 +5,12 @@ O DHCPv4 da rede residencial foi migrado do Huawei HG8145V5-V2 para o AdGuard Ho
 ## Estado atual validado
 
 ```text
-Servidor DHCP : 192.168.100.2
-Gateway       : 192.168.100.1
-Rede          : 192.168.100.0/24
-Pool          : 192.168.100.50 - 192.168.100.200
+Servidor DHCP : 192.168.15.2
+Gateway       : 192.168.15.1
+Rede          : 192.168.15.0/24
+Pool          : 192.168.15.50 - 192.168.15.200
 Lease         : 86400 segundos
-DNS           : 192.168.100.2
+DNS           : 192.168.15.2
 Domínio       : home.arpa
 DHCPv6        : desativado
 ```
@@ -25,8 +25,8 @@ Não publique MAC address ou nome de interface derivado de MAC como identificado
 
 ## Pré-requisitos para uma reinstalação
 
-- servidor em `192.168.100.2`;
-- gateway em `192.168.100.1`;
+- servidor em `192.168.15.2`;
+- gateway em `192.168.15.1`;
 - AdGuard respondendo em `:53`;
 - Unbound respondendo em `127.0.0.1:5335`;
 - acesso administrativo ao Huawei;
@@ -37,10 +37,10 @@ Não publique MAC address ou nome de interface derivado de MAC como identificado
 Exemplo temporário para um notebook:
 
 ```text
-IP:      192.168.100.20
+IP:      192.168.15.20
 Máscara: 255.255.255.0
-Gateway: 192.168.100.1
-DNS:     192.168.100.2
+Gateway: 192.168.15.1
+DNS:     192.168.15.2
 ```
 
 Use apenas durante recuperação; não deixe IPs manuais conflitarem com leases/reservas existentes.
@@ -51,15 +51,15 @@ Em **Settings > DHCP settings**:
 
 ```text
 Interface: interface Ethernet principal do servidor
-Gateway: 192.168.100.1
+Gateway: 192.168.15.1
 Subnet mask: 255.255.255.0
-Range start: 192.168.100.50
-Range end: 192.168.100.200
+Range start: 192.168.15.50
+Range end: 192.168.15.200
 Lease duration: 86400
 Domain name: home.arpa
 ```
 
-O IP `192.168.100.2` permanece fora do pool.
+O IP `192.168.15.2` permanece fora do pool.
 
 Reservas DHCP são opcionais e devem ser criadas somente para dispositivos que precisem de endereço previsível.
 
@@ -88,16 +88,16 @@ ipconfig /all
 O esperado é:
 
 ```text
-DHCP Server:    192.168.100.2
-Default Gateway: 192.168.100.1
-DNS Servers:   192.168.100.2
+DHCP Server:    192.168.15.2
+Default Gateway: 192.168.15.1
+DNS Servers:   192.168.15.2
 ```
 
 ## Testes
 
 ```powershell
-ping 192.168.100.1
-ping 192.168.100.2
+ping 192.168.15.1
+ping 192.168.15.2
 nslookup ubuntu.com
 nslookup doubleclick.net
 ```
@@ -119,7 +119,7 @@ Mensagens como `no existing lease` durante renovação podem ocorrer quando um c
 Se o DHCP do AdGuard falhar:
 
 1. use IP manual temporário em um notebook;
-2. acesse `192.168.100.1`;
+2. acesse `192.168.15.1`;
 3. reative DHCPv4 no Huawei;
 4. desative DHCP no AdGuard;
 5. renove leases dos clientes;
@@ -138,8 +138,8 @@ Se o DHCP do AdGuard falhar:
 - [x] DHCP do Huawei desativado;
 - [x] DHCPv4 do AdGuard ativo;
 - [x] clientes recebem endereços do pool atual;
-- [x] gateway `192.168.100.1`;
-- [x] DNS entregue `192.168.100.2`;
+- [x] gateway `192.168.15.1`;
+- [x] DNS entregue `192.168.15.2`;
 - [x] Internet funcional;
 - [x] bloqueios aparecem no Query Log;
 - [x] DHCPv6 permanece desativado.

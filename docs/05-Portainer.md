@@ -13,7 +13,7 @@ nano compose/.env
 Confirme:
 
 ```text
-SERVER_IP=192.168.100.2
+SERVER_IP=192.168.15.2
 ```
 
 ## Subir somente o Portainer
@@ -27,10 +27,10 @@ docker compose --env-file compose/.env -f compose/compose.yaml up -d portainer
 Abra no navegador:
 
 ```text
-https://192.168.100.2:9443
+https://192.168.15.2:9443
 ```
 
-Desde o [capítulo 20](20-Caddy-TLS-Local.md), quem responde nessa porta é o Caddy, com certificado emitido pela CA interna (confiável, sem aviso de segurança, desde que a CA esteja instalada no dispositivo). O Portainer em si só é alcançável internamente em `192.168.100.2:9444` (porta publicada pelo compose), onde continua servindo seu próprio HTTPS autoassinado — é para esse endereço interno que o Caddy encaminha, ignorando a validade do certificado apenas nesse trecho interno (`tls_insecure_skip_verify`).
+Desde o [capítulo 20](20-Caddy-TLS-Local.md), quem responde nessa porta é o Caddy, com certificado emitido pela CA interna (confiável, sem aviso de segurança, desde que a CA esteja instalada no dispositivo). O Portainer em si só é alcançável internamente em `192.168.15.2:9444` (porta publicada pelo compose), onde continua servindo seu próprio HTTPS autoassinado — é para esse endereço interno que o Caddy encaminha, ignorando a validade do certificado apenas nesse trecho interno (`tls_insecure_skip_verify`).
 
 ## Primeira configuração
 
@@ -44,8 +44,8 @@ Desde o [capítulo 20](20-Caddy-TLS-Local.md), quem responde nessa porta é o Ca
 ```bash
 docker ps --filter name=portainer
 docker logs --tail 50 portainer
-curl -I https://192.168.100.2:9443
-curl -kI https://192.168.100.2:9444
+curl -I https://192.168.15.2:9443
+curl -kI https://192.168.15.2:9444
 ```
 
 ## Backup

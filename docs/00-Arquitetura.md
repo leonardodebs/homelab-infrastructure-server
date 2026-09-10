@@ -11,14 +11,14 @@ Transformar o Dell Wyse em servidor de infraestrutura doméstica de baixo consum
 - acesso à Internet;
 - NAT;
 - Wi-Fi;
-- gateway `192.168.100.1`;
+- gateway `192.168.15.1`;
 - DHCPv4 desativado após a migração para o AdGuard Home.
 
 ### Dell Wyse N03D / 3290
 
 - Ubuntu Server 24.04.4 LTS;
 - hostname `homelab`;
-- IP estático `192.168.100.2`;
+- IP estático `192.168.15.2`;
 - Ethernet principal via adaptador USB TP-Link UE300;
 - Docker Engine e Compose;
 - Portainer;
@@ -36,8 +36,8 @@ Transformar o Dell Wyse em servidor de infraestrutura doméstica de baixo consum
 
 ```mermaid
 flowchart TD
-    Internet --> Huawei[Huawei HG8145V5-V2\n192.168.100.1\nNAT + Wi-Fi\nDHCP desativado]
-    Huawei --> Wyse[Dell Wyse\nhomelab\n192.168.100.2\nUbuntu Server]
+    Internet --> Huawei[Huawei HG8145V5-V2\n192.168.15.1\nNAT + Wi-Fi\nDHCP desativado]
+    Huawei --> Wyse[Dell Wyse\nhomelab\n192.168.15.2\nUbuntu Server]
     Huawei --> Clientes[Notebooks, celulares, TVs e demais clientes]
     Clientes -->|DHCP + DNS| AdGuard[AdGuard Home\nDNS :53 + DHCPv4 :67]
     AdGuard -->|127.0.0.1:5335| Unbound[Unbound\nDNS recursivo + cache]
@@ -45,7 +45,7 @@ flowchart TD
     Wyse --> Portainer[Portainer :9443]
     Wyse --> Kuma[Uptime Kuma :3001]
     Wyse --> Exporters[Node Exporter :9100\ncAdvisor :8081]
-    Exporters --> Grafana[Prometheus + Grafana\n192.168.100.3]
+    Exporters --> Grafana[Prometheus + Grafana\n192.168.15.3]
     Wyse --> Ntop[ntopng :3000\nAnálise de tráfego]
     Wyse --> Diun[Diun\nImage Update Notifier]
     Wyse --> Portal[HomeLab Web :8080]
@@ -56,10 +56,10 @@ flowchart TD
 
 1. O cliente entra na rede.
 2. O AdGuard Home entrega:
-   - IP no pool `192.168.100.50-192.168.100.200`;
+   - IP no pool `192.168.15.50-192.168.15.200`;
    - máscara `/24`;
-   - gateway `192.168.100.1`;
-   - DNS `192.168.100.2`;
+   - gateway `192.168.15.1`;
+   - DNS `192.168.15.2`;
    - domínio local `home.arpa`.
 3. O servidor permanece fora do pool DHCP.
 4. Reservas podem ser usadas para clientes que precisem de IP previsível.
@@ -116,25 +116,25 @@ O primeiro backup e o primeiro restore test foram executados com sucesso.
 
 | Recurso | Endereço |
 |---|---|
-| Rede | `192.168.100.0/24` |
-| Gateway/modem | `192.168.100.1` |
-| Dell Wyse | `192.168.100.2` |
+| Rede | `192.168.15.0/24` |
+| Gateway/modem | `192.168.15.1` |
+| Dell Wyse | `192.168.15.2` |
 | DHCP | AdGuard Home |
-| Pool DHCP | `192.168.100.50-192.168.100.200` |
+| Pool DHCP | `192.168.15.50-192.168.15.200` |
 | Unbound | `127.0.0.1:5335` |
-| AdGuard Web | `http://192.168.100.2` |
-| ntopng | `http://192.168.100.2:3000` |
-| Uptime Kuma | `http://192.168.100.2:3001` |
-| HomeLab Web | `http://192.168.100.2:8080` |
-| Grafana | `http://192.168.100.3:3000` |
-| Portainer | `https://192.168.100.2:9443` |
+| AdGuard Web | `http://192.168.15.2` |
+| ntopng | `http://192.168.15.2:3000` |
+| Uptime Kuma | `http://192.168.15.2:3001` |
+| HomeLab Web | `http://192.168.15.2:8080` |
+| Grafana | `http://192.168.15.3:3000` |
+| Portainer | `https://192.168.15.2:9443` |
 
 ## Restrições e boas práticas
 
 - O Wyse opera pela Ethernet principal; Wi-Fi não participa da operação crítica.
 - Nenhuma interface administrativa é encaminhada no modem para a Internet.
 - O Unbound permanece somente em loopback.
-- Os exporters `9100/tcp` e `8081/tcp` aceitam somente o Prometheus em `192.168.100.3`.
+- Os exporters `9100/tcp` e `8081/tcp` aceitam somente o Prometheus em `192.168.15.3`.
 - O ntopng permanece acessível apenas pela LAN e sua visibilidade é limitada ao tráfego observável pela interface monitorada.
 - Atualizações de DNS/DHCP não são automatizadas.
 - Backup deve preceder alterações relevantes na stack.

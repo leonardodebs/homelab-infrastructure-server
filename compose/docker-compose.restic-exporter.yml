@@ -1,5 +1,5 @@
 # =============================================================================
-# restic-exporter para o HomeLab (host Dell Wyse 3290, 192.168.100.2)
+# restic-exporter para o HomeLab (host Dell Wyse 3290, 192.168.15.2)
 # =============================================================================
 # Expoe as metricas do repositorio Restic em /srv/backup/restic para que o
 # Prometheus do Lenovo faca o scrape via rede na porta 8001.
@@ -54,7 +54,7 @@ services:
     ports:
       # Publicado na LAN para o Prometheus do Lenovo fazer o scrape.
       # Restrinja a origem no UFW (veja o README).
-      - "192.168.100.2:8001:8001"
+      - "192.168.15.2:8001:8001"
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m

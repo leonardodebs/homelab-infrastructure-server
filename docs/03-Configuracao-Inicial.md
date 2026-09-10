@@ -6,9 +6,9 @@ O servidor opera com:
 
 ```text
 Hostname : homelab
-IP       : 192.168.100.2/24
-Gateway  : 192.168.100.1
-Rede     : 192.168.100.0/24
+IP       : 192.168.15.2/24
+Gateway  : 192.168.15.1
+Rede     : 192.168.15.0/24
 Ethernet : adaptador TP-Link UE300 USB 3.0
 Timezone : America/Sao_Paulo
 ```
@@ -54,10 +54,10 @@ network:
     INTERFACE_REAL:
       dhcp4: false
       addresses:
-        - 192.168.100.2/24
+        - 192.168.15.2/24
       routes:
         - to: default
-          via: 192.168.100.1
+          via: 192.168.15.1
       nameservers:
         addresses:
           - 1.1.1.1
@@ -79,7 +79,7 @@ Depois:
 sudo netplan apply
 ip -br address
 ip route
-ping -c 3 192.168.100.1
+ping -c 3 192.168.15.1
 ping -c 3 1.1.1.1
 ```
 
@@ -148,13 +148,13 @@ kbdinteractiveauthentication no
 Teste positivo a partir do cliente:
 
 ```powershell
-ssh leonardo@192.168.100.2
+ssh leonardo@192.168.15.2
 ```
 
 Teste negativo, desabilitando chave no cliente:
 
 ```powershell
-ssh -o PubkeyAuthentication=no -o KbdInteractiveAuthentication=no leonardo@192.168.100.2
+ssh -o PubkeyAuthentication=no -o KbdInteractiveAuthentication=no leonardo@192.168.15.2
 ```
 
 Resultado validado:
@@ -246,8 +246,8 @@ ss -lntup
 Estado atual:
 
 - [x] hostname `homelab`;
-- [x] IP `192.168.100.2` persistente;
-- [x] gateway `192.168.100.1`;
+- [x] IP `192.168.15.2` persistente;
+- [x] gateway `192.168.15.1`;
 - [x] SSH funcional na LAN;
 - [x] autenticação SSH por chave validada;
 - [x] autenticação SSH por senha desativada;

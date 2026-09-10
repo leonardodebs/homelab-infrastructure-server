@@ -35,7 +35,7 @@ Teste por camadas:
 
 ```bash
 dig @127.0.0.1 -p 5335 ubuntu.com
-dig @192.168.100.2 ubuntu.com
+dig @192.168.15.2 ubuntu.com
 ```
 
 Interpretação:
@@ -119,10 +119,10 @@ sudo ufw status numbered
 URLs atuais:
 
 ```text
-AdGuard      http://192.168.100.2
-Uptime Kuma  http://192.168.100.2:3001
-HomeLab Web  http://192.168.100.2:8080
-Portainer    https://192.168.100.2:9443
+AdGuard      http://192.168.15.2
+Uptime Kuma  http://192.168.15.2:3001
+HomeLab Web  http://192.168.15.2:8080
+Portainer    https://192.168.15.2:9443
 ```
 
 ## Uptime Kuma mostra timeout mas o serviço está online
@@ -140,7 +140,7 @@ Teste de dentro do Kuma:
 
 ```bash
 docker exec uptime-kuma node -e \
-"fetch('http://192.168.100.2:8080').then(r=>console.log(r.status)).catch(console.error)"
+"fetch('http://192.168.15.2:8080').then(r=>console.log(r.status)).catch(console.error)"
 ```
 
 ## Backup falha

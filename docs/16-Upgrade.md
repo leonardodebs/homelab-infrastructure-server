@@ -35,7 +35,7 @@ A preferência é **não clonar** o disco antigo. A troca deve funcionar como te
 5. desligar com segurança;
 6. substituir o SATA Flash pelo SSD;
 7. instalar Ubuntu Server LTS limpo;
-8. configurar hostname `homelab` e IP `192.168.100.2`;
+8. configurar hostname `homelab` e IP `192.168.15.2`;
 9. clonar este repositório;
 10. reinstalar Docker e Unbound;
 11. recriar a stack Compose;

@@ -2,13 +2,13 @@
 set -Eeuo pipefail
 
 # HomeLab - Configuração segura do UFW
-# Rede LAN: 192.168.100.0/24
-# Servidor: 192.168.100.2
+# Rede LAN: 192.168.15.0/24
+# Servidor: 192.168.15.2
 # Interface LAN: detectada dinamicamente pelo IP do servidor
 # Rede Docker: detectada dinamicamente a partir de homelab_default
 
-LAN_CIDR="192.168.100.0/24"
-SERVER_IP="192.168.100.2"
+LAN_CIDR="192.168.15.0/24"
+SERVER_IP="192.168.15.2"
 DOCKER_NETWORK="homelab_default"
 LAN_IF="$(ip -o -4 addr show | awk -v ip="$SERVER_IP" '$4 ~ "^" ip "/" {print $2; exit}')"
 
@@ -122,19 +122,19 @@ PRÓXIMA VALIDAÇÃO - NÃO FECHE ESTA SESSÃO SSH AINDA
 
 Abra um novo terminal no notebook e teste:
 
-  Test-NetConnection 192.168.100.2 -Port 22
-  Test-NetConnection 192.168.100.2 -Port 80
-  Test-NetConnection 192.168.100.2 -Port 3000
-  Test-NetConnection 192.168.100.2 -Port 3001
-  Test-NetConnection 192.168.100.2 -Port 8080
-  Test-NetConnection 192.168.100.2 -Port 9443
-  Test-NetConnection 192.168.100.2 -Port 443
+  Test-NetConnection 192.168.15.2 -Port 22
+  Test-NetConnection 192.168.15.2 -Port 80
+  Test-NetConnection 192.168.15.2 -Port 3000
+  Test-NetConnection 192.168.15.2 -Port 3001
+  Test-NetConnection 192.168.15.2 -Port 8080
+  Test-NetConnection 192.168.15.2 -Port 9443
+  Test-NetConnection 192.168.15.2 -Port 443
 
 Portal HomeLab:
-  http://192.168.100.2:8080
+  http://192.168.15.2:8080
 
 ntopng:
-  http://192.168.100.2:3000
+  http://192.168.15.2:3000
 
 Valide também nova conexão SSH, DNS e DHCP conforme docs/11-UFW.md.
 

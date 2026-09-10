@@ -8,5 +8,6 @@ restore-tests/
 manual-restore/
 *.tar.gz
 *.log
+caddy-root-ca.crt
 .DS_Store
 Thumbs.db

@@ -9,19 +9,19 @@ O `ntopng` foi implantado para acrescentar visibilidade de tráfego de rede ao H
 - ntopng instalado nativamente no Ubuntu Server;
 - serviço gerenciado pelo systemd;
 - interface web disponível somente na LAN;
-- porta TCP `3000` liberada no UFW para a rede `192.168.100.0/24`;
+- porta TCP `3000` liberada no UFW para a rede `192.168.15.0/24`;
 - monitoramento associado à interface Ethernet principal do HomeLab;
-- rede local `192.168.100.0/24` reconhecida como rede interna;
+- rede local `192.168.15.0/24` reconhecida como rede interna;
 - dashboard validado e operacional;
 - desde o [capítulo 20](20-Caddy-TLS-Local.md), a porta pública `3000` é servida com TLS confiável pelo Caddy; o ntopng em si migrou seu `--http-port` (`-w=` em `/etc/ntopng/ntopng.conf`) para `3300`.
 
 Acesso administrativo:
 
 ```text
-https://192.168.100.2:3000
+https://192.168.15.2:3000
 ```
 
-Porta interna real (usada pelo Caddy): `192.168.100.2:3300`.
+Porta interna real (usada pelo Caddy): `192.168.15.2:3300`.
 
 ## Papel na observabilidade
 
@@ -38,7 +38,7 @@ Essa combinação permite analisar tanto a saúde do servidor quanto o comportam
 
 ## Limitação arquitetural atual
 
-O Dell Wyse não é o gateway padrão da residência. O gateway continua sendo o Huawei em `192.168.100.1`.
+O Dell Wyse não é o gateway padrão da residência. O gateway continua sendo o Huawei em `192.168.15.1`.
 
 Por esse motivo, o ntopng não deve ser interpretado como sensor de todo o tráfego da LAN. Ele observa principalmente o tráfego que efetivamente chega ou passa pela interface do próprio HomeLab.
 

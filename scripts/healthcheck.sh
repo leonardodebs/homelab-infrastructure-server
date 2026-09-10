@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-SERVER_IP="${SERVER_IP:-192.168.100.2}"
+SERVER_IP="${SERVER_IP:-192.168.15.2}"
 BACKUP_MOUNT="${BACKUP_MOUNT:-/srv/backup}"
 
 echo '== Host =='
@@ -25,7 +25,7 @@ dig +short @127.0.0.1 -p 5335 ubuntu.com
 dig +short @"$SERVER_IP" ubuntu.com
 
 echo '== Gateway =='
-ping -c 2 192.168.100.1
+ping -c 2 192.168.15.1
 
 echo '== Rede Docker =='
 docker network inspect homelab_default \

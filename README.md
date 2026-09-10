@@ -29,10 +29,10 @@ Centralizar serviços essenciais da rede doméstica no HomeLab:
 | Rede principal | TP-Link UE300 USB 3.0 Gigabit Ethernet |
 | Sistema | Ubuntu Server 24.04.4 LTS |
 | Hostname | `homelab` |
-| Rede | `192.168.100.0/24` |
-| Gateway | `192.168.100.1` |
-| HomeLab | `192.168.100.2` |
-| Pool DHCP | `192.168.100.50-192.168.100.200` |
+| Rede | `192.168.15.0/24` |
+| Gateway | `192.168.15.1` |
+| HomeLab | `192.168.15.2` |
+| Pool DHCP | `192.168.15.50-192.168.15.200` |
 
 O Wi-Fi do Dell não participa da infraestrutura crítica. Identificadores únicos de hardware, MAC addresses, tokens, hashes e senhas não devem ser publicados no repositório.
 
@@ -40,13 +40,13 @@ O Wi-Fi do Dell não participa da infraestrutura crítica. Identificadores únic
 
 | Serviço | Função | Acesso público (via Caddy, TLS confiável) | Porta interna real |
 |---|---|---|---|
-| AdGuard Home | DNS + DHCPv4 | `http://192.168.100.2` (sem TLS — porta 80 não suporta) ou `https://192.168.100.2:8443` / `https://adguard.home.arpa` | `192.168.100.2:8280` |
+| AdGuard Home | DNS + DHCPv4 | `http://192.168.15.2` (sem TLS — porta 80 não suporta) ou `https://192.168.15.2:8443` / `https://adguard.home.arpa` | `192.168.15.2:8280` |
 | Unbound | DNS recursivo/cache | — | `127.0.0.1:5335` |
-| ntopng | análise de tráfego/hosts | `https://192.168.100.2:3000` / `https://ntop.home.arpa` | `192.168.100.2:3300` |
-| Uptime Kuma | disponibilidade | `https://192.168.100.2:3001` / `https://kuma.home.arpa` | `192.168.100.2:3101` |
-| HomeLab Web | portal interno | `https://192.168.100.2:8080` / `https://web.home.arpa` | `192.168.100.2:8180` |
-| Grafana | métricas e alertas | `http://192.168.100.3:3000` | — |
-| Portainer | gerência Docker | `https://192.168.100.2:9443` / `https://portainer.home.arpa` | `192.168.100.2:9444` |
+| ntopng | análise de tráfego/hosts | `https://192.168.15.2:3000` / `https://ntop.home.arpa` | `192.168.15.2:3300` |
+| Uptime Kuma | disponibilidade | `https://192.168.15.2:3001` / `https://kuma.home.arpa` | `192.168.15.2:3101` |
+| HomeLab Web | portal interno | `https://192.168.15.2:8080` / `https://web.home.arpa` | `192.168.15.2:8180` |
+| Grafana | métricas e alertas | `http://192.168.15.3:3000` | — |
+| Portainer | gerência Docker | `https://192.168.15.2:9443` / `https://portainer.home.arpa` | `192.168.15.2:9444` |
 | Diun | notificação de imagens | sem porta publicada | — |
 | Restic | backup/restore | `/srv/backup` | — |
 | Caddy | reverse proxy + CA interna, termina TLS em todas as portas acima | `:443` (`*.home.arpa`) e nas próprias portas públicas de cada serviço | — |
@@ -57,18 +57,18 @@ O certificado confiável exige a CA local do Caddy instalada no dispositivo clie
 
 ```mermaid
 flowchart TD
-    Internet --> Huawei[Huawei HG8145V5-V2\n192.168.100.1\nGateway + NAT + Wi-Fi]
-    Huawei --> Wyse[Dell Wyse\nhomelab\n192.168.100.2]
+    Internet --> Huawei[Huawei HG8145V5-V2\n192.168.15.1\nGateway + NAT + Wi-Fi]
+    Huawei --> Wyse[Dell Wyse\nhomelab\n192.168.15.2]
     Huawei --> Clientes[Notebooks, celulares, TVs]
     Clientes -->|DHCP + DNS| AGH[AdGuard Home\nDNS 53]
     AGH --> Unbound[Unbound\n127.0.0.1:5335]
     Unbound --> Internet
     Clientes -->|HTTPS 3000/3001/8080/9443/8443/443| Caddy[Caddy\nTLS local + CA interna]
-    Caddy --> AGH2[AdGuard Web\n192.168.100.2:8280]
-    Caddy --> Ntop[ntopng\n192.168.100.2:3300]
-    Caddy --> Kuma[Uptime Kuma\n192.168.100.2:3101]
-    Caddy --> Portal[HomeLab Web\n192.168.100.2:8180]
-    Caddy --> Portainer[Portainer\n192.168.100.2:9444]
+    Caddy --> AGH2[AdGuard Web\n192.168.15.2:8280]
+    Caddy --> Ntop[ntopng\n192.168.15.2:3300]
+    Caddy --> Kuma[Uptime Kuma\n192.168.15.2:3101]
+    Caddy --> Portal[HomeLab Web\n192.168.15.2:8180]
+    Caddy --> Portainer[Portainer\n192.168.15.2:9444]
     Wyse --> Grafana[Grafana no Lenovo :3000]
     Wyse --> Diun[Diun]
     Wyse --> Backup[Restic /srv/backup]
@@ -87,7 +87,7 @@ O ntopng foi instalado nativamente no Ubuntu, está acessível pela porta `3000/
 
 ### Limitação do ntopng
 
-O Dell Wyse não é o gateway da residência. O Huawei continua como gateway/NAT em `192.168.100.1`. Portanto, o ntopng não captura automaticamente todo o tráfego entre clientes e Internet.
+O Dell Wyse não é o gateway da residência. O Huawei continua como gateway/NAT em `192.168.15.1`. Portanto, o ntopng não captura automaticamente todo o tráfego entre clientes e Internet.
 
 Para visibilidade integral da LAN será necessária uma evolução como gateway/firewall dedicado, switch com SPAN/port mirroring ou tecnologia equivalente de exportação de fluxos.
 
