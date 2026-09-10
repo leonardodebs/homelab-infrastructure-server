@@ -52,8 +52,10 @@ docker restart caddy
 2. Criar o usuário administrador (o Backrest pede na primeira tela).
 3. **Add Repo**:
    - URI: `/repos/homelab`
-   - Password: deixar em branco e usar a variável de ambiente — na verdade o Backrest lê `RESTIC_PASSWORD_FILE`; informe o caminho `/run/secrets/restic-password` no campo de arquivo de senha, ou cole o conteúdo (menos recomendado).
-   - **Não** criar Plan nenhum. Sem prune/check automático.
+   - Password: no campo de arquivo de senha, informe `/run/secrets/restic-password`.
+   - **Flags / extra args**: adicione `--no-lock`. O repositório é montado somente leitura, então o Restic não consegue gravar arquivos de lock — `--no-lock` deixa as operações de leitura (snapshots, ls, stats, restore) funcionarem sem tentar travar o repo.
+   - **Não** criar Plan nenhum. Sem prune/check automático (além de o repo `:ro` impedir isso, evita disputa com o `homelab-backup.service`).
+   - Se o Backrest reclamar mesmo com `--no-lock`, a alternativa é trocar o mount de `:ro` para `:rw` no `compose.yaml` (o Backrest continua sem plano, então só faz leitura; o lock do Restic serializa com o systemd).
 4. Abrir o repo → aba de snapshots. A lista deve bater com `restic snapshots --host homelab --tag homelab` rodado no servidor.
 
 ## 6. Testar um restore
