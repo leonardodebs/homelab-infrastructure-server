@@ -78,6 +78,8 @@ Todos os timers usam a hora local do host, configurada como `America/Sao_Paulo`.
 - 12 mensais;
 - 2 anuais.
 
+O `restic forget` usa `--group-by host,tags` (não o padrão `host,paths`). Como todos os snapshots usam `--host homelab --tag homelab`, a política acima é aplicada ao conjunto inteiro, independente de quais volumes entraram em cada snapshot. Sem isso, cada mudança no conjunto de origens (ex.: Beszel saiu, Caddy entrou) criaria um "grupo" novo que mantinha os próprios 7 diários, deixando snapshots antigos presos além do previsto.
+
 ## Primeiro backup validado
 
 A implantação produziu um snapshot inicial real com sucesso.

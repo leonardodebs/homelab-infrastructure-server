@@ -32,6 +32,7 @@ echo "Aplicando retenção e liberando espaço não referenciado..."
 nice -n 15 ionice -c2 -n7 restic forget \
   --host "$HOST_TAG" \
   --tag homelab \
+  --group-by host,tags \
   --keep-daily 7 \
   --keep-weekly 8 \
   --keep-monthly 12 \

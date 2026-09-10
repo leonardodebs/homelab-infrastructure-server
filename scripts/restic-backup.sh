@@ -126,6 +126,7 @@ nice -n 10 ionice -c2 -n7 restic backup \
 restic forget \
   --host "$HOST_TAG" \
   --tag homelab \
+  --group-by host,tags \
   --keep-daily 7 \
   --keep-weekly 8 \
   --keep-monthly 12 \
