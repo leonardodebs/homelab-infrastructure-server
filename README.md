@@ -25,7 +25,7 @@ Centralizar serviços essenciais da rede doméstica no HomeLab:
 | CPU | Intel Celeron N2807 @ 1.58 GHz |
 | RAM | 4 GB DDR3 |
 | Armazenamento interno | SATA Flash 32 GB |
-| Backup | mídia USB 128 GB em ext4 |
+| Backup | mídia USB 15 GB em ext4 |
 | Rede principal | TP-Link UE300 USB 3.0 Gigabit Ethernet |
 | Sistema | Ubuntu Server 24.04.4 LTS |
 | Hostname | `homelab` |

@@ -89,7 +89,9 @@ for volume in \
   homelab_adguard_work \
   homelab_adguard_conf \
   homelab_uptime_kuma_data \
-  homelab_diun_data
+  homelab_diun_data \
+  homelab_caddy_data \
+  homelab_caddy_config
 do
   if docker volume inspect "$volume" >/dev/null 2>&1; then
     mountpoint_path="$(docker volume inspect -f '{{.Mountpoint}}' "$volume")"

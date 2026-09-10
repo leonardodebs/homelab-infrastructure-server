@@ -4,7 +4,7 @@ Este capítulo documenta a mídia removível usada para proteger o HomeLab com R
 
 ## Mídia atual validada
 
-A implantação atual usa um **pendrive USB de 128 GB nominais / 117,19 GiB utilizáveis**.
+A implantação atual usa um **pendrive USB de 15 GB** (substituiu o de 128 GB por necessidade; permanente). O repositório Restic tem ~500 MB deduplicados, então a capacidade é suficiente para a retenção 7/8/12/2.
 
 Por segurança e privacidade, serial, MAC, UUID real e outros identificadores únicos não são publicados neste repositório.
 
@@ -40,7 +40,7 @@ SATA Flash interno 32 GB — produção
 ├── HomeLab Web
 └── Unbound
 
-Mídia USB 128 GB — backup
+Mídia USB 15 GB — backup
 └── /srv/backup
     ├── restic
     ├── restore-tests
@@ -87,7 +87,7 @@ Estado esperado:
 FSTYPE : ext4
 LABEL  : HOMELAB_BACKUP
 MOUNT  : /srv/backup
-SIZE   : ~115G
+SIZE   : ~15G
 ```
 
 A entrada no `fstab` segue o padrão:
@@ -127,7 +127,7 @@ A stack usa:
 - restore test mensal;
 - SMART somente quando suportado pela mídia.
 
-Pendrives normalmente não oferecem SMART útil. A ausência de SMART não é tratada como falha do backup.
+Pendrives normalmente não oferecem SMART útil. Neste gabinete USB específico (bridge `346d:5678`), o `smartctl -d scsi` **funciona** e retorna `SMART Health Status`; o `scripts/smart-check.sh` tenta automático → `-d sat` → `-d scsi` nessa ordem. Se nenhum funcionar, a ausência de SMART não é tratada como falha do backup.
 
 ## Dados protegidos
 

@@ -46,7 +46,7 @@ O SATA Flash antigo deve ser preservado temporariamente como rollback físico.
 
 ## Mídia de backup
 
-A mídia operacional atual é um **pendrive USB de 128 GB**, validado com F3 e montado em `/srv/backup`.
+A mídia operacional atual é um **pendrive USB de 15 GB**, montado em `/srv/backup` (substituiu o de 128 GB por necessidade).
 
 Um HD externo de maior capacidade pode ser usado futuramente como:
 

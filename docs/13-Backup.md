@@ -1,6 +1,6 @@
 # 13 — Backup e restauração
 
-A estratégia atual usa uma **mídia USB de 128 GB nominais**, validada com F3, formatada em ext4 e montada em `/srv/backup`.
+A estratégia atual usa uma **mídia USB de 15 GB**, formatada em ext4 e montada em `/srv/backup`. O repositório Restic tem cerca de 500 MB deduplicados (`restore-size` ~2,3 GiB), então 15 GB são suficientes com folga para a retenção atual (7/8/12/2).
 
 O passo a passo detalhado está em:
 
@@ -12,7 +12,7 @@ O passo a passo detalhado está em:
 SATA Flash interno de 32 GB
 └── produção: Ubuntu, Docker e serviços
 
-Mídia USB de 128 GB
+Mídia USB de 15 GB
 └── /srv/backup
     ├── restic
     ├── restore-tests
@@ -223,6 +223,10 @@ A mídia USB é uma cópia local. Ela não implementa 3-2-1 sozinha e não prote
 
 Evoluções possíveis:
 
-- segunda mídia de backup;
-- cópia criptografada externa/off-site;
-- uso futuro do HD de maior capacidade como segunda camada de recuperação.
+- **cópia no servidor Lenovo (`192.168.15.3`, ~180 GB livres)** — planejada como próxima etapa: `restic copy` para um segundo repositório (rest-server ou SFTP) depois de cada backup local, fechando o 3-2-1 com duas máquinas;
+- cópia criptografada externa/off-site (fora da residência);
+- segunda mídia USB rotacionada.
+
+## Visualização e restore assistido
+
+O [Backrest](21-Backrest.md) fornece uma interface web (`https://backrest.home.arpa`) para navegar snapshots, ver estatísticas e restaurar arquivos pelo navegador. Ele monta o repositório **somente leitura** — o executor dos backups continua sendo o `systemd`.
