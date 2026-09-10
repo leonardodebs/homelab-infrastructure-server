@@ -49,7 +49,10 @@ A porta `443/tcp` é do Caddy ([docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.m
 
 ```bash
 sudo ufw allow from 192.168.15.0/24 to any port 8443 proto tcp comment 'AdGuard HTTPS (Caddy) LAN'
+sudo ufw allow from 192.168.15.0/24 to any port 9899 proto tcp comment 'Backrest HTTPS (Caddy) LAN'
 ```
+
+A porta `9899/tcp` é o Backrest ([docs/21-Backrest.md](21-Backrest.md)) via Caddy; o container em si escuta só em `127.0.0.1:9898`, sem regra própria.
 
 A porta `3000/tcp` não é mais usada pelo assistente inicial do AdGuard. No estado atual ela é utilizada pela interface web do ntopng e permanece liberada somente para a LAN.
 
@@ -145,6 +148,7 @@ Sockets esperados:
 8080/tcp     Caddy TLS -> HomeLab Web (interno 8180)
 9443/tcp     Caddy TLS -> Portainer (interno 9444)
 8443/tcp     Caddy TLS -> AdGuard Web (interno 8280)
+9899/tcp     Caddy TLS -> Backrest (interno 127.0.0.1:9898)
 443/tcp      Caddy (*.home.arpa)
 127.0.0.1:5335 Unbound
 ```
@@ -215,7 +219,7 @@ Se o servidor ganhar VPN, VLAN, segunda interface ou exposição externa, revise
 - [x] exporters `8001`, `8081` e `9100` restritos ao Prometheus;
 - [x] regras `DOCKER-USER` persistidas por systemd após o Docker;
 - [x] nenhuma porta administrativa encaminhada no modem;
-- [x] portas `443/tcp` e `8443/tcp` do Caddy liberadas para a LAN (ver [docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.md));
+- [x] portas `443/tcp`, `8443/tcp` e `9899/tcp` do Caddy liberadas para a LAN (ver [docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.md) e [docs/21-Backrest.md](21-Backrest.md));
 - [x] Caddy assumiu 3000/3001/8080/9443 com TLS e certificado de IP; serviços reais migrados para portas internas (3300/3101/8180/9444);
 - [x] porta `80` continua HTTP puro (Caddy não termina TLS nela); AdGuard ganhou `8443` como HTTPS alternativo, e AdGuard em si migrou para `8280` interno;
 - [ ] regras `Docker monitor` atualizadas para as portas internas novas no firewall do servidor.

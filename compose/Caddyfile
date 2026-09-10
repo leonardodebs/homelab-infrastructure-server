@@ -60,3 +60,12 @@ https://{$SERVER_IP}:3000 {
 	tls internal
 	reverse_proxy {$SERVER_IP}:3300
 }
+
+backrest.home.arpa {
+	reverse_proxy 127.0.0.1:9898
+}
+
+https://{$SERVER_IP}:9899 {
+	tls internal
+	reverse_proxy 127.0.0.1:9898
+}

@@ -76,6 +76,8 @@ ufw allow from "$LAN_CIDR" to any port 3000 proto tcp comment 'ntopng LAN'
 ufw allow from "$LAN_CIDR" to any port 3001 proto tcp comment 'Uptime Kuma LAN'
 ufw allow from "$LAN_CIDR" to any port 8080 proto tcp comment 'HomeLab Web LAN'
 ufw allow from "$LAN_CIDR" to any port 9443 proto tcp comment 'Portainer LAN'
+ufw allow from "$LAN_CIDR" to any port 8443 proto tcp comment 'AdGuard HTTPS (Caddy) LAN'
+ufw allow from "$LAN_CIDR" to any port 9899 proto tcp comment 'Backrest HTTPS (Caddy) LAN'
 ufw allow from "$LAN_CIDR" to any port 443 proto tcp comment 'Caddy TLS local LAN'
 
 ufw allow from "$DOCKER_CIDR" to "$SERVER_IP" port 53 proto tcp comment 'Docker monitor DNS TCP'
@@ -89,6 +91,8 @@ ok "ntopng TCP/3000"
 ok "Uptime Kuma TCP/3001"
 ok "HomeLab Web TCP/8080"
 ok "Portainer TCP/9443"
+ok "AdGuard HTTPS (Caddy) TCP/8443"
+ok "Backrest HTTPS (Caddy) TCP/9899"
 ok "Caddy TLS local TCP/443"
 ok "Monitoramento interno permitido de $DOCKER_CIDR para serviços selecionados no host"
 

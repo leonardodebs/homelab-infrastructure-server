@@ -47,8 +47,9 @@ O Wi-Fi do Dell não participa da infraestrutura crítica. Identificadores únic
 | HomeLab Web | portal interno | `https://192.168.15.2:8080` / `https://web.home.arpa` | `192.168.15.2:8180` |
 | Grafana | métricas e alertas | `http://192.168.15.3:3000` | — |
 | Portainer | gerência Docker | `https://192.168.15.2:9443` / `https://portainer.home.arpa` | `192.168.15.2:9444` |
-| Diun | notificação de imagens | sem porta publicada | — |
+| Diun | notificação de imagens (e-mail via Gmail) | sem porta publicada | — |
 | Restic | backup/restore | `/srv/backup` | — |
+| Backrest | interface web do Restic (navegar snapshots, restore) | `https://192.168.15.2:9899` / `https://backrest.home.arpa` | `127.0.0.1:9898` |
 | Caddy | reverse proxy + CA interna, termina TLS em todas as portas acima | `:443` (`*.home.arpa`) e nas próprias portas públicas de cada serviço | — |
 
 O certificado confiável exige a CA local do Caddy instalada no dispositivo cliente — veja [docs/20-Caddy-TLS-Local.md](docs/20-Caddy-TLS-Local.md).
@@ -63,15 +64,17 @@ flowchart TD
     Clientes -->|DHCP + DNS| AGH[AdGuard Home\nDNS 53]
     AGH --> Unbound[Unbound\n127.0.0.1:5335]
     Unbound --> Internet
-    Clientes -->|HTTPS 3000/3001/8080/9443/8443/443| Caddy[Caddy\nTLS local + CA interna]
+    Clientes -->|HTTPS 3000/3001/8080/9443/8443/9899/443| Caddy[Caddy\nTLS local + CA interna]
     Caddy --> AGH2[AdGuard Web\n192.168.15.2:8280]
     Caddy --> Ntop[ntopng\n192.168.15.2:3300]
     Caddy --> Kuma[Uptime Kuma\n192.168.15.2:3101]
     Caddy --> Portal[HomeLab Web\n192.168.15.2:8180]
     Caddy --> Portainer[Portainer\n192.168.15.2:9444]
+    Caddy --> Backrest[Backrest\n127.0.0.1:9898]
     Wyse --> Grafana[Grafana no Lenovo :3000]
     Wyse --> Diun[Diun]
     Wyse --> Backup[Restic /srv/backup]
+    Backrest -. lê :ro .-> Backup
 ```
 
 ## Observabilidade
@@ -158,6 +161,7 @@ Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic
 19. [Horário e agendamentos](docs/18-Horario-Agendamentos.md)
 20. [ntopng e observabilidade de rede](docs/19-ntopng.md)
 21. [Caddy e TLS local](docs/20-Caddy-TLS-Local.md)
+22. [Backrest (visualizador do Restic)](docs/21-Backrest.md)
 
 ## Estado do projeto
 
@@ -181,7 +185,11 @@ Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic
 - [x] restore test
 - [x] documentação técnica consolidada
 - [x] Caddy com TLS local implantado, incluindo HTTPS confiável nas portas públicas diretas (não só nos hostnames `.home.arpa`)
-- [ ] monitores do Uptime Kuma reapontados para as portas internas após a migração do Caddy (ver [docs/20](docs/20-Caddy-TLS-Local.md))
+- [x] monitores do Uptime Kuma reapontados para as portas internas após a migração do Caddy
+- [x] migração da rede `192.168.100.x` → `192.168.15.x` versionada
+- [x] Diun com notificação por e-mail (Gmail SMTP)
+- [x] Backrest (visualizador do Restic) atrás do Caddy
+- [ ] cópia off-site do Restic no Lenovo (`192.168.15.3`) — fecha o 3-2-1
 - [ ] burn-in de estabilidade por 48–72 horas
 - [ ] evidências/capturas para portfólio
 - [ ] evolução futura para gateway/firewall dedicado ou captura integral da LAN

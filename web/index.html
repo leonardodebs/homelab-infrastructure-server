@@ -53,6 +53,7 @@
           <div class="card"><div class="meta">Recursive DNS</div><h3>Unbound</h3><p>Resolver recursivo, DNSSEC e cache local.</p></div>
           <div class="card"><div class="meta">Image Updates</div><h3>Diun</h3><p>Detecção controlada de novas imagens Docker, sem atualização automática.</p></div>
           <div class="card"><div class="meta">Backup</div><h3>Restic</h3><p>Snapshots criptografados, retenção, verificação de integridade e restore test.</p></div>
+          <div class="card"><div class="meta">Backup UI</div><h3>Backrest</h3><p>Interface web sobre o repositório Restic para navegar snapshots e restaurar arquivos, em modo somente leitura.</p></div>
           <div class="card"><div class="meta">Security</div><h3>UFW + SSH Hardening</h3><p>Firewall restritivo, autenticação SSH por chave e senha remota desativada.</p></div>
           <div class="card"><div class="meta">TLS</div><h3>Caddy</h3><p>Reverse proxy com CA interna própria, HTTPS confiável por hostname e por IP em todos os painéis administrativos.</p></div>
         </div>
@@ -84,6 +85,7 @@ Gateway residencial · NAT · Wi-Fi · DHCP desativado
        ├── Diun · detecção de novas imagens
        ├── Caddy · reverse proxy · TLS local · CA interna
        ├── Restic · backup / retenção / restore test
+       ├── Backrest · interface web do Restic (somente leitura)
        └── UFW + SSH hardening · segurança</div>
       </section>
     </main>

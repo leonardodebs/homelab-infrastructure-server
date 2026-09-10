@@ -114,6 +114,32 @@ services:
     labels:
       - diun.enable=true
 
+  backrest:
+    image: garethgeorge/backrest:v1.14.1@sha256:b852979754281026230cc69fb11428e6d57c9a97784ab4a444ffc7934c53a215
+    container_name: backrest
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      TZ: America/Sao_Paulo
+      BACKREST_PORT: 0.0.0.0:9898
+      BACKREST_DATA: /data
+      BACKREST_CONFIG: /config/config.json
+      XDG_CACHE_HOME: /cache
+    ports:
+      # Só o Caddy alcança; nunca exposto direto na LAN.
+      - "127.0.0.1:9898:9898"
+    volumes:
+      - backrest_data:/data
+      - backrest_config:/config
+      - backrest_cache:/cache
+      # Repositório Restic existente, SOMENTE LEITURA: Backrest só navega,
+      # mostra stats e restaura. O executor dos backups continua sendo o systemd.
+      - /srv/backup/restic:/repos/homelab:ro
+      - /etc/homelab-backup/restic-password:/run/secrets/restic-password:ro
+    labels:
+      - diun.enable=true
+
 volumes:
   portainer_data:
   adguard_work:
@@ -122,3 +148,6 @@ volumes:
   diun_data:
   caddy_data:
   caddy_config:
+  backrest_data:
+  backrest_config:
+  backrest_cache:
