@@ -9,7 +9,7 @@ O nome exato da interface Ethernet é detectado no servidor e não é documentad
 ## Detectar a interface LAN
 
 ```bash
-LAN_IF="$(ip -o -4 addr show | awk '$4 ~ /^192\.168\.100\.2\// {print $2; exit}')"
+LAN_IF="$(ip -o -4 addr show | awk '$4 ~ /^192\.168\.15\.2\// {print $2; exit}')"
 echo "$LAN_IF"
 ```
 
@@ -156,7 +156,7 @@ Sockets esperados:
 Valide:
 
 ```bash
-sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3000|:3001|:8080|:9443|:5335)\b'
+sudo ss -lntup | grep -E '(:22|:53|:67|:80|:443|:3000|:3001|:8080|:8443|:9443|:9899|:5335)\b'
 ```
 
 ## Validação a partir de um notebook Windows
@@ -164,10 +164,13 @@ sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3000|:3001|:8080|:9443|:5335)\b'
 ```powershell
 Test-NetConnection 192.168.15.2 -Port 22
 Test-NetConnection 192.168.15.2 -Port 80
+Test-NetConnection 192.168.15.2 -Port 443
 Test-NetConnection 192.168.15.2 -Port 3000
 Test-NetConnection 192.168.15.2 -Port 3001
 Test-NetConnection 192.168.15.2 -Port 8080
+Test-NetConnection 192.168.15.2 -Port 8443
 Test-NetConnection 192.168.15.2 -Port 9443
+Test-NetConnection 192.168.15.2 -Port 9899
 nslookup ubuntu.com
 nslookup doubleclick.net
 ```
@@ -222,4 +225,4 @@ Se o servidor ganhar VPN, VLAN, segunda interface ou exposição externa, revise
 - [x] portas `443/tcp`, `8443/tcp` e `9899/tcp` do Caddy liberadas para a LAN (ver [docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.md) e [docs/21-Backrest.md](21-Backrest.md));
 - [x] Caddy assumiu 3000/3001/8080/9443 com TLS e certificado de IP; serviços reais migrados para portas internas (3300/3101/8180/9444);
 - [x] porta `80` continua HTTP puro (Caddy não termina TLS nela); AdGuard ganhou `8443` como HTTPS alternativo, e AdGuard em si migrou para `8280` interno;
-- [ ] regras `Docker monitor` atualizadas para as portas internas novas no firewall do servidor.
+- [x] regras `Docker monitor` atualizadas para as portas internas novas (8280/8180/9444) e as antigas (80/8080/9443) removidas.

@@ -110,20 +110,38 @@ Se a senha precisar ser redefinida, siga o procedimento de `docs/06-AdGuardHome.
 
 ## Interfaces web inacessíveis
 
+Desde o [capítulo 20](20-Caddy-TLS-Local.md), o Caddy termina TLS nas portas públicas e encaminha para as portas internas reais. Verifique as duas camadas:
+
 ```bash
 docker ps
-sudo ss -lntup | grep -E '(:80|:3001|:8080|:9443)\b'
+sudo ss -lntup | grep -E '(:80|:443|:3000|:3001|:8080|:8443|:9443|:9899|:8280|:3300|:3101|:8180|:9444)\b'
 sudo ufw status numbered
+docker logs --tail 50 caddy
 ```
 
-URLs atuais:
+URLs públicas (via Caddy, HTTPS confiável com a CA instalada):
 
 ```text
-AdGuard      http://192.168.15.2
-Uptime Kuma  http://192.168.15.2:3001
-HomeLab Web  http://192.168.15.2:8080
+AdGuard      http://192.168.15.2  (porta 80, sem TLS)  |  https://192.168.15.2:8443
+Uptime Kuma  https://192.168.15.2:3001
+HomeLab Web  https://192.168.15.2:8080
 Portainer    https://192.168.15.2:9443
+ntopng       https://192.168.15.2:3000
+Backrest     https://192.168.15.2:9899
 ```
+
+Portas internas reais (o que o Caddy encaminha): `8280` (AdGuard), `3300` (ntopng), `3101` (Kuma), `8180` (HomeLab Web), `9444` (Portainer), `127.0.0.1:9898` (Backrest).
+
+### Caddy não sobe ou não serve um site
+
+```bash
+docker logs --tail 80 caddy
+docker exec caddy caddy validate --config /etc/caddy/Caddyfile
+```
+
+Depois de um `git pull` que muda o `Caddyfile`, **sempre** rode `docker restart caddy` — `caddy reload` sozinho não pega o conteúdo novo por causa do bind mount de arquivo único.
+
+Se o navegador mostra "não confiável", a CA do Caddy não está instalada nesse dispositivo — ver [docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.md).
 
 ## Uptime Kuma mostra timeout mas o serviço está online
 
@@ -136,11 +154,11 @@ docker network inspect homelab_default \
 
 O Kuma acessa o IP do host a partir da rede Docker. Confira as regras Docker -> host descritas em `docs/12-UFW.md`.
 
-Teste de dentro do Kuma:
+Teste de dentro do Kuma (use a porta interna real, não a pública que agora é TLS):
 
 ```bash
 docker exec uptime-kuma node -e \
-"fetch('http://192.168.15.2:8080').then(r=>console.log(r.status)).catch(console.error)"
+"fetch('http://192.168.15.2:8180').then(r=>console.log(r.status)).catch(console.error)"
 ```
 
 ## Backup falha

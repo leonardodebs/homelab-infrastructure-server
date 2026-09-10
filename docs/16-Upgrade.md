@@ -79,7 +79,7 @@ Para preservar DNS/DHCP durante quedas curtas, um nobreak pode proteger:
 
 - modem/ONT;
 - Dell Wyse;
-- mídia de backup quando conectada;
+- pendrive de backup quando conectado;
 - eventual switch.
 
 Também vale revisar na BIOS a opção de retorno automático após falta de energia, se disponível e confiável.
@@ -111,15 +111,21 @@ Quando houver hardware mais potente:
 
 Essa separação mantém DNS/DHCP independentes dos laboratórios.
 
+## Melhorias já implementadas
+
+- **reverse proxy interno com URLs amigáveis** — Caddy ([docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.md));
+- **DNS rewrites em `home.arpa`** — `portainer`/`adguard`/`kuma`/`web`/`ntop`/`backrest`.home.arpa;
+- **TLS local confiável** — CA interna do Caddy;
+- **visualizador do Restic** — Backrest ([docs/21-Backrest.md](21-Backrest.md));
+- **notificação de atualizações por e-mail** — Diun via Gmail SMTP.
+
 ## Melhorias futuras opcionais
 
 - segundo DNS para redundância;
-- segunda cópia criptografada fora do HomeLab;
-- reverse proxy interno para URLs amigáveis;
-- DNS rewrites em `home.arpa`;
+- **segunda cópia criptografada fora do HomeLab** — planejada no Lenovo (`192.168.15.3`);
 - Tailscale somente se houver necessidade real de administração remota;
 - UPS/NUT;
-- GitHub Actions para validar YAML e shell scripts.
+- GitHub Actions para validar YAML e shell scripts (hoje só existe o workflow que publica o portal no GitHub Pages).
 
 Esses itens não são necessários para considerar o HomeLab atual operacional.
 

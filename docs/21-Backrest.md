@@ -50,13 +50,18 @@ docker restart caddy
 
 1. Abrir `https://backrest.home.arpa` (cadeado válido — a CA do Caddy já está instalada no Windows).
 2. Criar o usuário administrador (o Backrest pede na primeira tela).
-3. **Add Repo**:
-   - URI: `/repos/homelab`
-   - Password: no campo de arquivo de senha, informe `/run/secrets/restic-password`.
-   - **Flags / extra args**: adicione `--no-lock`. O repositório é montado somente leitura, então o Restic não consegue gravar arquivos de lock — `--no-lock` deixa as operações de leitura (snapshots, ls, stats, restore) funcionarem sem tentar travar o repo.
-   - **Não** criar Plan nenhum. Sem prune/check automático (além de o repo `:ro` impedir isso, evita disputa com o `homelab-backup.service`).
-   - Se o Backrest reclamar mesmo com `--no-lock`, a alternativa é trocar o mount de `:ro` para `:rw` no `compose.yaml` (o Backrest continua sem plano, então só faz leitura; o lock do Restic serializa com o systemd).
-4. Abrir o repo → aba de snapshots. A lista deve bater com `restic snapshots --host homelab --tag homelab` rodado no servidor.
+3. **Adicionar Repositório** (a UI do Backrest não tem um campo dedicado de "arquivo de senha" — usa-se variável de ambiente):
+   - **Nome do Repositório**: `HomeLabRestic` (ou o que preferir);
+   - **URI do Repositório**: `/repos/homelab`;
+   - **Senha**: deixe **em branco**;
+   - **Variáveis de Ambiente**: adicione `RESTIC_PASSWORD_FILE=/run/secrets/restic-password`;
+   - **Desbloqueio Automático**: **desligado** (o repo é `:ro`, não dá pra destravar mesmo);
+   - **Prune Policy** e **Check Policy**: **desative os dois** (o `systemd` já faz `restic check`/`forget --prune`; e o repo `:ro` bloquearia essas operações);
+   - aba **Advanced → Opções**: adicione a flag `--no-lock` (repo `:ro` → Restic não consegue gravar arquivos de lock; `--no-lock` deixa snapshots/ls/stats/restore funcionarem);
+   - **NÃO** crie nenhum Plano.
+   - Se o Backrest reclamar mesmo com `--no-lock`, a alternativa é trocar o mount de `:ro` para `:rw` no `compose.yaml` (continua sem plano, só leitura; o lock do Restic serializa com o systemd).
+4. Clique em **Testar Configuração** — deve responder "Conectado com sucesso ... um repositório existente foi encontrado". Depois **Enviar**.
+5. Abrir o repo → os snapshots aparecem como `_unassociated_` (sem plano). A contagem deve bater com `restic snapshots --host homelab --tag homelab` rodado no servidor.
 
 ## 6. Testar um restore
 
@@ -71,10 +76,10 @@ Pela UI: escolher um snapshot → navegar até um arquivo pequeno → **Restore*
 
 ## Validação
 
-- [ ] `docker ps` mostra `backrest` `running`;
-- [ ] `https://backrest.home.arpa` e `https://192.168.15.2:9899` abrem com cadeado válido;
-- [ ] login do Backrest criado;
-- [ ] repo `/repos/homelab` adicionado, **sem plano**;
-- [ ] contagem de snapshots no Backrest = `restic snapshots --host homelab --tag homelab`;
-- [ ] restore de um arquivo para `/tmp` funciona;
+- [x] `docker ps` mostra `backrest` `running`;
+- [x] `https://backrest.home.arpa` e `https://192.168.15.2:9899` abrem com cadeado válido;
+- [x] login do Backrest criado (instância `homelab-dell`);
+- [x] repo `/repos/homelab` adicionado, **sem plano**;
+- [x] contagem de snapshots no Backrest bate com o `restic snapshots` do servidor;
+- [ ] restore de um arquivo para `/tmp` testado;
 - [ ] `homelab-backup.service` roda normalmente na janela seguinte (sem erro de lock).

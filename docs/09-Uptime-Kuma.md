@@ -19,7 +19,7 @@ docker compose --env-file compose/.env -f compose/compose.yaml up -d uptime-kuma
 
 ## Monitores atuais validados
 
-A implantação opera com sete monitores:
+A implantação opera com seis monitores (o antigo "Beszel Web" foi removido junto com o Beszel):
 
 1. **Gateway Huawei**
    - tipo: Ping;
@@ -101,9 +101,10 @@ Ele é incluído pelo backup Restic do projeto. Durante o snapshot, o container 
 
 ## Estado atual
 
-- [x] sete monitores configurados;
+- [x] seis monitores configurados;
 - [x] checks DNS e HTTP funcionando;
 - [x] Portainer monitorado com certificado autoassinado;
 - [x] regras Docker -> host do UFW validadas;
 - [x] volume incluído no Restic;
-- [ ] monitores 4 (AdGuard Web), 5 (Portainer) e 6 (HomeLab Web) reapontados para as portas internas novas (8280/9444/8180) depois da migração do capítulo 20.
+- [x] monitores 4 (AdGuard Web), 5 (Portainer) e 6 (HomeLab Web) reapontados para as portas internas (8280/9444/8180) depois da migração do capítulo 20;
+- [x] monitor órfão "Beszel Web" removido.

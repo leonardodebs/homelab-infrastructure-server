@@ -74,9 +74,13 @@ A stack `homelab` contém:
 - `adguardhome`;
 - `uptime-kuma`;
 - `homelab-web`;
-- `diun`.
+- `diun`;
+- `caddy` — reverse proxy + CA interna para TLS local (ver `docs/20-Caddy-TLS-Local.md`);
+- `backrest` — interface web do Restic (ver `docs/21-Backrest.md`).
 
-O Unbound não roda em Docker; ele é um serviço nativo do Ubuntu.
+Os exporters (`node-exporter-dell`, `cadvisor-dell`, `restic-exporter`) ficam em arquivos Compose separados em `compose/`, cada um com seu próprio projeto isolado.
+
+O Unbound e o ntopng não rodam em Docker; são serviços nativos do Ubuntu.
 
 ## Comandos operacionais
 
@@ -106,9 +110,14 @@ homelab_adguard_work
 homelab_adguard_conf
 homelab_uptime_kuma_data
 homelab_diun_data
+homelab_caddy_data      # chave privada da CA interna + certificados
+homelab_caddy_config
+homelab_backrest_data
+homelab_backrest_config
+homelab_backrest_cache
 ```
 
-Esses volumes são tratados pela política de backup Restic quando existem.
+Portainer, AdGuard, Uptime Kuma, Diun e Caddy são incluídos no backup Restic. Os volumes do Backrest não entram no backup — o Backrest é só um visualizador e sua config é recriável.
 
 O `homelab-web` é stateless: os arquivos do portal ficam no diretório `web/` do próprio repositório e são montados somente leitura no Nginx.
 
@@ -129,7 +138,7 @@ Portas publicadas pelo Docker podem ser processadas antes das regras UFW comuns.
 - regras específicas da rede Docker para checks do Uptime Kuma;
 - ausência de port forwarding externo.
 
-Consulte `docs/11-UFW.md`.
+Consulte `docs/12-UFW.md`.
 
 ## Validação
 

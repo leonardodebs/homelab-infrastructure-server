@@ -25,7 +25,7 @@ ip -br address
 Também é possível localizar a interface que possui o IP do servidor:
 
 ```bash
-ip -o -4 addr show | awk '$4 ~ /^192\.168\.100\.2\// {print $2}'
+ip -o -4 addr show | awk '$4 ~ /^192\.168\.15\.2\// {print $2}'
 ```
 
 ## 2. Descobrir o arquivo Netplan
@@ -221,7 +221,7 @@ timedatectl timesync-status
 
 Tanto `/etc/localtime` quanto `/etc/timezone` devem apontar/indicar `America/Sao_Paulo`.
 
-A auditoria detalhada de timers, cron, containers e schedulers está em [17 — Horário e agendamentos](17-Horario-Agendamentos.md).
+A auditoria detalhada de timers, cron, containers e schedulers está em [18 — Horário e agendamentos](18-Horario-Agendamentos.md).
 
 ## 8. Diretórios do projeto
 

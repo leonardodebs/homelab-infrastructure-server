@@ -18,7 +18,7 @@ DHCPv6        : desativado
 A interface usada pelo DHCP é a Ethernet principal via TP-Link UE300. O nome exato da interface deve ser obtido no servidor:
 
 ```bash
-ip -o -4 addr show | awk '$4 ~ /^192\.168\.100\.2\// {print $2}'
+ip -o -4 addr show | awk '$4 ~ /^192\.168\.15\.2\// {print $2}'
 ```
 
 Não publique MAC address ou nome de interface derivado de MAC como identificador permanente em documentação pública.

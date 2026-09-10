@@ -107,8 +107,8 @@ sudo systemctl restart unbound
 journalctl -u unbound -n 100 --no-pager
 ```
 
-- [ ] Unbound ativo;
-- [ ] porta `5335` somente em loopback;
-- [ ] consulta normal funciona;
-- [ ] validação DNSSEC funciona;
-- [ ] AdGuard usa apenas o Unbound como upstream.
+- [x] Unbound ativo;
+- [x] porta `5335` somente em loopback;
+- [x] consulta normal funciona;
+- [x] validação DNSSEC funciona;
+- [x] AdGuard usa apenas o Unbound como upstream.

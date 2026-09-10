@@ -89,6 +89,19 @@ DHCPv6        : desativado
 
 Consulte `docs/08-DHCP.md` para o procedimento completo.
 
+## DNS rewrites (`*.home.arpa`)
+
+Em **Filters → DNS rewrites**, os seguintes nomes locais apontam para `192.168.15.2` e são servidos com TLS pelo Caddy ([docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.md)):
+
+```text
+adguard.home.arpa
+portainer.home.arpa
+kuma.home.arpa
+web.home.arpa
+ntop.home.arpa
+backrest.home.arpa
+```
+
 ## Listas de bloqueio
 
 Use abordagem conservadora:

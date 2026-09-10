@@ -69,6 +69,8 @@ sudo cat /srv/backup/status/last-success.txt
 systemctl list-timers 'homelab-*' --no-pager
 ```
 
+Para navegar snapshots, ver estatísticas ou restaurar um arquivo pontual, use o Backrest em `https://backrest.home.arpa` ([docs/21-Backrest.md](21-Backrest.md)). Ele lê o repositório em modo somente leitura — o executor continua sendo o `systemd`.
+
 Backup manual antes de uma manutenção relevante:
 
 ```bash
@@ -269,7 +271,7 @@ sudo journalctl -u homelab-restore-test.service --no-pager -n 100
 - [ ] restore test recente com `RESTORE_TEST_OK.txt`;
 - [ ] `restic check` sem erros;
 - [ ] espaço interno superior a 20%;
-- [ ] mídia de backup sem erros de I/O;
+- [ ] pendrive de backup sem erros de I/O;
 - [ ] Uptime Kuma sem incidentes não explicados;
 - [ ] Grafana sem tendência anormal de CPU/RAM/temperatura/disco;
 - [ ] nenhuma porta encaminhada no modem;

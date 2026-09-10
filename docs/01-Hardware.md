@@ -48,7 +48,7 @@ O SSD de 120 GB permanece planejado para o fim de 2026.
 - adaptador TP-Link UE300 + cabo RJ45;
 - notebook para criação da mídia e administração SSH;
 - Ubuntu Server 24.04 LTS amd64;
-- mídia USB dedicada ao backup.
+- pendrive dedicado ao backup.
 
 ## Configuração de BIOS
 
@@ -101,4 +101,4 @@ A estratégia preferida é instalação limpa do Ubuntu no SSD e recuperação a
 - [x] Ethernet principal validada via TP-Link UE300;
 - [x] portas USB usadas com sucesso;
 - [x] servidor operando sem reinicializações anormais observadas durante a implantação;
-- [x] mídia USB de backup validada e montada.
+- [x] pendrive de backup formatado e montado.

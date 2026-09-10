@@ -8,14 +8,17 @@ A política do HomeLab é **detectar e revisar atualizações, sem atualizar con
 
 A stack usa `diun.enable=true` nos serviços monitorados.
 
-Atualmente o Diun acompanha:
+Atualmente o Diun acompanha 7 imagens:
 
 - Portainer;
 - AdGuard Home;
 - Uptime Kuma;
 - HomeLab Web/Nginx;
 - Caddy;
+- Backrest;
 - o próprio Diun.
+
+Os exporters (`node-exporter-dell`, `cadvisor-dell`, `restic-exporter`) ficam em Compose separados sem o label e não são acompanhados.
 
 O Unbound não é containerizado e continua sob gerenciamento do APT do Ubuntu.
 
@@ -140,6 +143,13 @@ docker logs --tail 50 diun
 ```
 
 Erros de autenticação SMTP aparecem nos logs assim que o Diun tenta usar o notificador — se a senha de app estiver errada ou a conta sem 2FA, o log mostra a falha na primeira checagem (`DIUN_WATCH_RUNONSTARTUP=true` garante que isso é testado imediatamente).
+
+Para forçar um e-mail de teste sem esperar uma imagem nova de verdade:
+
+```bash
+docker exec diun diun notif test
+# deve responder: "Notification sent for mail notifier(s)"
+```
 
 ## Segurança
 

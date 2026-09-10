@@ -27,10 +27,12 @@ Transformar o Dell Wyse em servidor de infraestrutura doméstica de baixo consum
 - Uptime Kuma para disponibilidade;
 - Node Exporter e cAdvisor exportando métricas para Prometheus/Grafana no Lenovo;
 - ntopng para análise de tráfego e hosts visíveis pela interface do HomeLab;
-- Diun para detecção de novas imagens;
+- Diun para detecção de novas imagens (notifica por e-mail);
 - HomeLab Web como portal interno;
+- Caddy como reverse proxy com CA interna, servindo TLS confiável para todos os painéis (por hostname `*.home.arpa` e por IP);
+- Backrest como interface web do repositório Restic (navegar snapshots e restaurar arquivos);
 - UFW como firewall do host;
-- Restic em mídia USB dedicada para backup e restore test.
+- Restic em pendrive USB dedicado para backup e restore test.
 
 ## Topologia
 
@@ -42,14 +44,18 @@ flowchart TD
     Clientes -->|DHCP + DNS| AdGuard[AdGuard Home\nDNS :53 + DHCPv4 :67]
     AdGuard -->|127.0.0.1:5335| Unbound[Unbound\nDNS recursivo + cache]
     Unbound --> Internet
-    Wyse --> Portainer[Portainer :9443]
-    Wyse --> Kuma[Uptime Kuma :3001]
+    Clientes -->|HTTPS 80/443/3000/3001/8080/8443/9443/9899| Caddy[Caddy\nTLS local + CA interna]
+    Caddy --> Portainer[Portainer\n:9444 interno]
+    Caddy --> Kuma[Uptime Kuma\n:3101 interno]
+    Caddy --> Ntop[ntopng\n:3300 interno]
+    Caddy --> Portal[HomeLab Web\n:8180 interno]
+    Caddy --> AGHWeb[AdGuard Web\n:8280 interno]
+    Caddy --> Backrest[Backrest\n:9898 loopback]
     Wyse --> Exporters[Node Exporter :9100\ncAdvisor :8081]
     Exporters --> Grafana[Prometheus + Grafana\n192.168.15.3]
-    Wyse --> Ntop[ntopng :3000\nAnálise de tráfego]
     Wyse --> Diun[Diun\nImage Update Notifier]
-    Wyse --> Portal[HomeLab Web :8080]
     Wyse --> Backup[Restic\n/srv/backup]
+    Backrest -. lê :ro .-> Backup
 ```
 
 ## Fluxo DHCP
@@ -78,6 +84,7 @@ O AdGuard aplica listas de bloqueio, regras locais e políticas por cliente. Con
 - Prometheus e Grafana registram CPU, RAM, swap, disco, rede, temperatura e containers;
 - ntopng acrescenta análise de tráfego, hosts, protocolos e fluxos observáveis pela interface Ethernet do HomeLab;
 - AdGuard Home fornece histórico de consultas DNS e identificação de clientes;
+- Backrest dá visibilidade sobre o repositório Restic (snapshots, tamanho, restore assistido);
 - o portal HomeLab centraliza os links administrativos;
 - logs do Docker e do systemd permanecem disponíveis para troubleshooting.
 
@@ -122,12 +129,15 @@ O primeiro backup e o primeiro restore test foram executados com sucesso.
 | DHCP | AdGuard Home |
 | Pool DHCP | `192.168.15.50-192.168.15.200` |
 | Unbound | `127.0.0.1:5335` |
-| AdGuard Web | `http://192.168.15.2` |
-| ntopng | `http://192.168.15.2:3000` |
-| Uptime Kuma | `http://192.168.15.2:3001` |
-| HomeLab Web | `http://192.168.15.2:8080` |
-| Grafana | `http://192.168.15.3:3000` |
-| Portainer | `https://192.168.15.2:9443` |
+| AdGuard Web | `http://192.168.15.2` (sem TLS) ou `https://192.168.15.2:8443` / `https://adguard.home.arpa` |
+| ntopng | `https://192.168.15.2:3000` / `https://ntop.home.arpa` |
+| Uptime Kuma | `https://192.168.15.2:3001` / `https://kuma.home.arpa` |
+| HomeLab Web | `https://192.168.15.2:8080` / `https://web.home.arpa` |
+| Portainer | `https://192.168.15.2:9443` / `https://portainer.home.arpa` |
+| Backrest | `https://192.168.15.2:9899` / `https://backrest.home.arpa` |
+| Grafana (Lenovo) | `http://192.168.15.3:3000` |
+
+O HTTPS confiável depende da CA interna do Caddy instalada no dispositivo — ver [docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.md).
 
 ## Restrições e boas práticas
 
@@ -150,9 +160,12 @@ O primeiro backup e o primeiro restore test foram executados com sucesso.
 6. DHCP migrado do Huawei para o AdGuard.
 7. Uptime Kuma instalado e monitores configurados.
 8. Beszel aposentado após migração para Prometheus e Grafana.
-9. Diun instalado.
+9. Diun instalado, com notificação por e-mail (Gmail SMTP).
 10. HomeLab Web publicado na LAN.
 11. UFW aplicado e validado.
-12. Mídia USB preparada.
+12. Pendrive de backup preparado.
 13. Restic instalado, backup criado, `restic check` executado e restauração testada.
 14. ntopng instalado nativamente, porta `3000/tcp` liberada na LAN e dashboard validado.
+15. Caddy implantado com CA interna; TLS confiável por hostname e por IP em todos os painéis.
+16. Backrest implantado atrás do Caddy como visualizador do Restic.
+17. Rede migrada de `192.168.100.x` para `192.168.15.x`.

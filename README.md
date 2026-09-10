@@ -1,6 +1,6 @@
 # HomeLab Infrastructure Server
 
-Servidor doméstico de baixo consumo baseado em **Dell Wyse N03D / 3290**, **Ubuntu Server 24.04 LTS**, Docker e serviços de infraestrutura para a rede residencial.
+Servidor doméstico de baixo consumo baseado em **Dell Wyse N03D / 3290**, **Ubuntu Server 24.04.4 LTS**, Docker e serviços de infraestrutura para a rede residencial.
 
 ## Objetivo
 
@@ -12,10 +12,11 @@ Centralizar serviços essenciais da rede doméstica no HomeLab:
 - disponibilidade com Uptime Kuma;
 - métricas do host e containers com Prometheus e Grafana no Lenovo;
 - análise de tráfego e hosts com ntopng;
-- detecção de novas imagens com Diun;
+- detecção de novas imagens com Diun (notifica por e-mail);
+- TLS local confiável (por hostname e por IP) com Caddy + CA interna;
 - firewall UFW;
 - portal administrativo interno;
-- backup criptografado e restore test com Restic.
+- backup criptografado e restore test com Restic, com interface web pelo Backrest.
 
 ## Hardware e rede
 
@@ -179,8 +180,8 @@ Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic
 - [x] SSH hardening
 - [x] unattended-upgrades
 - [x] timezone/NTP/RTC auditados
-- [x] mídia USB e Restic
-- [x] backup automático
+- [x] pendrive de backup e Restic
+- [x] backup automático (inclui volumes do Caddy; `restic forget --group-by host,tags`)
 - [x] `restic check`
 - [x] restore test
 - [x] documentação técnica consolidada

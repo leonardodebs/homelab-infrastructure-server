@@ -32,6 +32,8 @@ https://192.168.15.2:9443
 
 Desde o [capítulo 20](20-Caddy-TLS-Local.md), quem responde nessa porta é o Caddy, com certificado emitido pela CA interna (confiável, sem aviso de segurança, desde que a CA esteja instalada no dispositivo). O Portainer em si só é alcançável internamente em `192.168.15.2:9444` (porta publicada pelo compose), onde continua servindo seu próprio HTTPS autoassinado — é para esse endereço interno que o Caddy encaminha, ignorando a validade do certificado apenas nesse trecho interno (`tls_insecure_skip_verify`).
 
+O bloco do Portainer no `Caddyfile` usa `header_up Host {http.request.hostport}` para preservar o `Host` original — sem isso a proteção CSRF do Portainer rejeita o login com `"origin invalid"`. Detalhes em [docs/20-Caddy-TLS-Local.md](20-Caddy-TLS-Local.md#portainer-e-csrf-atrás-do-proxy).
+
 ## Primeira configuração
 
 1. Crie o usuário administrador.

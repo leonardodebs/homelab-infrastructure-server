@@ -48,11 +48,12 @@ O backup atual inclui:
 - MOTD customizado do HomeLab;
 - configuração da própria rotina Restic, sem a senha;
 - volumes persistentes do Portainer;
-- AdGuard Home;
+- AdGuard Home (`adguard_work` + `adguard_conf`);
 - Uptime Kuma;
-- Diun.
+- Diun;
+- Caddy (`caddy_data` + `caddy_config`) — inclui a chave privada da CA interna.
 
-O HomeLab Web é protegido pelo próprio repositório Git, pois seus arquivos ficam em `web/`.
+O HomeLab Web é protegido pelo próprio repositório Git, pois seus arquivos ficam em `web/`. Os volumes do Backrest não entram no backup (é só visualizador, config recriável).
 
 Não são incluídos:
 

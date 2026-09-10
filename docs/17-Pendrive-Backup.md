@@ -18,14 +18,17 @@ Uma segunda cópia (off-site, no servidor Lenovo `192.168.15.3`) está planejada
 SATA Flash interno 32 GB — produção
 ├── Ubuntu Server
 ├── Docker e imagens
-├── AdGuard Home
+├── AdGuard Home + Unbound (DNS/DHCP)
 ├── Portainer
 ├── Uptime Kuma
 ├── Diun
 ├── HomeLab Web
-└── Unbound
+├── Caddy (TLS local + CA interna)
+├── Backrest (visualizador do Restic)
+├── ntopng (nativo)
+└── exporters (node-exporter, cAdvisor, restic-exporter)
 
-Mídia USB 15 GB — backup
+Pendrive USB 15 GB — backup
 └── /srv/backup
     ├── restic
     ├── restore-tests
@@ -130,9 +133,10 @@ Incluídos:
 - volumes do Portainer;
 - AdGuard Home;
 - Uptime Kuma;
-- Diun.
+- Diun;
+- Caddy (`caddy_data` + `caddy_config`, inclui a chave privada da CA interna).
 
-O portal HomeLab é estático e está no próprio repositório Git.
+O portal HomeLab é estático e está no próprio repositório Git. Os volumes do Backrest não entram no backup (visualizador, config recriável).
 
 Excluídos:
 
@@ -155,6 +159,8 @@ Retenção:
 - 8 semanais;
 - 12 mensais;
 - 2 anuais.
+
+O `restic forget` usa `--group-by host,tags` para que a retenção seja aplicada ao conjunto todo (todos os snapshots têm `--host homelab --tag homelab`), independente de quais volumes mudaram ao longo do tempo.
 
 ## Instalação do Restic e timers
 
@@ -263,12 +269,12 @@ Depois de reconectar, confirme `findmnt /srv/backup` antes de esperar novos back
 
 ## Limitações
 
-A mídia atual atende ao laboratório, mas não implementa 3-2-1 sozinha. Ela não protege contra:
+O pendrive atende ao laboratório, mas não implementa 3-2-1 sozinho. Ele não protege contra:
 
 - roubo;
 - incêndio;
-- surto elétrico que atinja servidor e mídia;
-- falha física da própria mídia;
+- surto elétrico que atinja servidor e pendrive;
+- falha física do próprio pendrive;
 - perda da senha Restic.
 
-Como evolução futura, use uma segunda cópia criptografada, rotação offline ou mídia de maior capacidade.
+Próxima etapa: cópia off-site no servidor Lenovo (`192.168.15.3`, ~180 GB livres) via `restic copy` após cada backup, fechando o 3-2-1 com duas máquinas.

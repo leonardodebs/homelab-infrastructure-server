@@ -16,7 +16,7 @@ O Caddy roda em `network_mode: host` (mesmo modelo do AdGuard) e assumiu as port
 | HomeLab Web | `8080` | `192.168.15.2:8180` |
 | Portainer | `9443` | `192.168.15.2:9444` |
 
-Além disso, o Caddy escuta `443` para os hostnames `*.home.arpa` (`portainer`, `adguard`, `kuma`, `web`, `ntop`).
+Além disso, o Caddy escuta `443` para os hostnames `*.home.arpa` (`portainer`, `adguard`, `kuma`, `web`, `ntop`, `backrest`) e serve o Backrest também em `192.168.15.2:9899` (ver [docs/21-Backrest.md](21-Backrest.md)).
 
 **Certificado por IP exige SAN de IP.** O motivo do Portainer sempre mostrar "Não seguro" mesmo com HTTPS é que o certificado autoassinado dele tem `IP Address: 0.0.0.0` como SAN — não bate com `192.168.15.2`. O Caddy 2.11+ emite certificados com SAN de IP pela CA interna quando o bloco do Caddyfile é endereçado pelo próprio IP:porta.
 
@@ -110,6 +110,7 @@ Em **Filters → DNS rewrites**, adicione, todos apontando para `192.168.15.2`:
 - `kuma.home.arpa`
 - `web.home.arpa`
 - `ntop.home.arpa`
+- `backrest.home.arpa`
 
 ## 7. Exportar e instalar a CA raiz
 
@@ -130,7 +131,7 @@ Repita em outros dispositivos que forem acessar os serviços via HTTPS — em An
 
 ## Backup
 
-`caddy_data` (contém a chave privada da CA local) e `caddy_config` são volumes Docker; inclua-os no backup Restic junto com os demais volumes da stack — perder `caddy_data` significa gerar uma CA nova e reinstalar o certificado raiz em todos os dispositivos.
+`caddy_data` (contém a chave privada da CA local) e `caddy_config` já estão incluídos no backup Restic ([scripts/restic-backup.sh](../scripts/restic-backup.sh)) — perder `caddy_data` significaria gerar uma CA nova e reinstalar o certificado raiz em todos os dispositivos.
 
 ## Validação
 
@@ -141,5 +142,6 @@ Repita em outros dispositivos que forem acessar os serviços via HTTPS — em An
 - [x] `https://*.home.arpa` funcionam sem alteração;
 - [x] DNS (`53`) não foi afetado em nenhuma etapa;
 - [x] regras "Docker monitor" do UFW atualizadas para as portas internas novas;
-- [ ] monitores do Uptime Kuma (AdGuard Web, Portainer, HomeLab Web) reapontados para as portas internas;
+- [x] monitores do Uptime Kuma (AdGuard Web, Portainer, HomeLab Web) reapontados para as portas internas;
+- [x] `caddy_data` e `caddy_config` incluídos no backup Restic;
 - [ ] CA raiz instalada em todos os dispositivos que precisam acessar os serviços (hoje: só o notebook Windows principal).
