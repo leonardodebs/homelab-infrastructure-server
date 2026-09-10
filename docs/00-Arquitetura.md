@@ -101,7 +101,7 @@ Ele não atualiza containers automaticamente. A atualização é executada manua
 
 ## Backup e recuperação
 
-A mídia atual é um pendrive USB de 128 GB nominais, validado com F3, formatado em ext4 e montado em `/srv/backup`.
+O backup roda em um pendrive USB de 15 GB, formatado em ext4 e montado em `/srv/backup`.
 
 O Restic fornece:
 

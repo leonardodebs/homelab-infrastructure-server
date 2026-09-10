@@ -25,7 +25,7 @@ Centralizar serviços essenciais da rede doméstica no HomeLab:
 | CPU | Intel Celeron N2807 @ 1.58 GHz |
 | RAM | 4 GB DDR3 |
 | Armazenamento interno | SATA Flash 32 GB |
-| Backup | mídia USB 15 GB em ext4 |
+| Backup | pendrive USB 15 GB em ext4, montado em `/srv/backup` |
 | Rede principal | TP-Link UE300 USB 3.0 Gigabit Ethernet |
 | Sistema | Ubuntu Server 24.04.4 LTS |
 | Hostname | `homelab` |
@@ -157,7 +157,7 @@ Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic
 15. [Manutenção](docs/14-Manutencao.md)
 16. [Troubleshooting](docs/15-Troubleshooting.md)
 17. [Upgrades](docs/16-Upgrade.md)
-18. [Mídia USB e Restic](docs/17-HD-Externo-Backup.md)
+18. [Pendrive dedicado ao backup](docs/17-Pendrive-Backup.md)
 19. [Horário e agendamentos](docs/18-Horario-Agendamentos.md)
 20. [ntopng e observabilidade de rede](docs/19-ntopng.md)
 21. [Caddy e TLS local](docs/20-Caddy-TLS-Local.md)

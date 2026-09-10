@@ -1,31 +1,16 @@
-# 17 — Mídia USB dedicada ao backup
+# 17 — Pendrive dedicado ao backup
 
-Este capítulo documenta a mídia removível usada para proteger o HomeLab com Restic.
+Este capítulo documenta o pendrive removível usado para proteger o HomeLab com Restic.
 
-## Mídia atual validada
+## Pendrive atual
 
 A implantação atual usa um **pendrive USB de 15 GB** (substituiu o de 128 GB por necessidade; permanente). O repositório Restic tem ~500 MB deduplicados, então a capacidade é suficiente para a retenção 7/8/12/2.
 
 Por segurança e privacidade, serial, MAC, UUID real e outros identificadores únicos não são publicados neste repositório.
 
-Antes do uso, a capacidade foi validada com F3:
+> Ao trocar de pendrive, valide a capacidade real com `sudo f3probe --destructive --time-ops /dev/sdX` antes de formatar. `--destructive` apaga a mídia — confirme o dispositivo correto.
 
-```bash
-sudo f3probe --destructive --time-ops /dev/sdX
-```
-
-Resultado observado na mídia atual:
-
-```text
-Good news: The device is the real thing
-Usable size:    117.19 GB
-Announced size: 117.19 GB
-Module:         128.00 GB
-```
-
-> `f3probe --destructive` apaga a mídia. Use apenas depois de confirmar o dispositivo correto.
-
-O HD externo de maior capacidade permanece como opção futura, não como requisito da implantação atual.
+Uma segunda cópia (off-site, no servidor Lenovo `192.168.15.3`) está planejada para fechar o 3-2-1 — ver [docs/13-Backup.md](13-Backup.md).
 
 ## Arquitetura atual
 

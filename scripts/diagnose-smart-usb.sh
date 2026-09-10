@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Diagnostico do SMART no HD USB de backup.
+# Diagnostico do SMART no pendrive USB de backup.
 # So leitura: nao altera nada no sistema nem no disco.
 #
 # O smart-check.sh do projeto ja tenta "-d sat" como fallback, mas a

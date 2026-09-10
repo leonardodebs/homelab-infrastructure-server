@@ -34,10 +34,10 @@ O HomeLab opera atualmente com:
 
 ```text
 SATA Flash 32 GB -> produção
-Pendrive USB 128 GB -> backup Restic
+Pendrive USB 15 GB -> backup Restic
 ```
 
-O pendrive de backup foi validado com F3, formatado em ext4 e montado em `/srv/backup`.
+O pendrive de backup foi formatado em ext4 e montado em `/srv/backup`. O repositório Restic tem ~500 MB deduplicados, então 15 GB são suficientes para a retenção 7/8/12/2.
 
 O SSD de 120 GB permanece planejado para o fim de 2026.
 
@@ -74,11 +74,11 @@ O Ubuntu e a stack atual cabem no armazenamento, mas o ambiente deve permanecer 
 - monitorar `df -h`, `docker system df` e `journalctl --disk-usage`;
 - manter preferencialmente 20% ou mais de espaço livre.
 
-## Mídia de backup atual
+## Pendrive de backup atual
 
-A implantação não depende mais do HD externo de 1 TB planejado inicialmente. A mídia operacional atual é um pendrive USB de 128 GB nominais, adequado ao volume atual de configurações e volumes persistentes.
+O backup roda em um **pendrive USB de 15 GB** montado em `/srv/backup`, suficiente para o repositório Restic (~500 MB deduplicados) e a retenção 7/8/12/2. O plano inicial previa um disco externo de maior capacidade, descartado por não ser necessário.
 
-O HD externo de maior capacidade pode ser reutilizado futuramente como segunda cópia ou substituição da mídia atual.
+A segunda cópia (off-site) está planejada para o servidor Lenovo `192.168.15.3` — ver [docs/13-Backup.md](13-Backup.md).
 
 ## Upgrade futuro
 

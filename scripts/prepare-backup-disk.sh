@@ -70,7 +70,7 @@ mkdir -p "$MOUNT_POINT"
 FSTAB_LINE="UUID=$UUID $MOUNT_POINT ext4 defaults,nofail,x-systemd.automount,x-systemd.device-timeout=10s 0 2"
 
 if ! grep -qE "^[^#].*[[:space:]]${MOUNT_POINT//\//\\/}[[:space:]]" /etc/fstab; then
-  printf '\n# HD externo dedicado aos backups do HomeLab\n%s\n' "$FSTAB_LINE" >> /etc/fstab
+  printf '\n# Pendrive dedicado aos backups do HomeLab\n%s\n' "$FSTAB_LINE" >> /etc/fstab
 else
   echo "AVISO: já existe uma entrada para $MOUNT_POINT em /etc/fstab. Revise-a manualmente."
 fi
@@ -85,7 +85,7 @@ chmod 0750 "$MOUNT_POINT/restic" "$MOUNT_POINT/restore-tests" "$MOUNT_POINT/stat
 sync
 
 echo
-echo "HD preparado com sucesso."
+echo "Pendrive preparado com sucesso."
 echo "Dispositivo: $PARTITION"
 echo "UUID:        $UUID"
 echo "Montagem:    $MOUNT_POINT"

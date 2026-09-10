@@ -1,10 +1,10 @@
 # 13 — Backup e restauração
 
-A estratégia atual usa uma **mídia USB de 15 GB**, formatada em ext4 e montada em `/srv/backup`. O repositório Restic tem cerca de 500 MB deduplicados (`restore-size` ~2,3 GiB), então 15 GB são suficientes com folga para a retenção atual (7/8/12/2).
+A estratégia atual usa um **pendrive USB de 15 GB**, formatado em ext4 e montado em `/srv/backup`. O repositório Restic tem cerca de 500 MB deduplicados (`restore-size` ~2,3 GiB), então 15 GB são suficientes com folga para a retenção atual (7/8/12/2).
 
 O passo a passo detalhado está em:
 
-- [17 — Mídia USB dedicada ao backup](17-HD-Externo-Backup.md)
+- [17 — Pendrive dedicado ao backup](17-Pendrive-Backup.md)
 
 ## Arquitetura
 
@@ -12,14 +12,14 @@ O passo a passo detalhado está em:
 SATA Flash interno de 32 GB
 └── produção: Ubuntu, Docker e serviços
 
-Mídia USB de 15 GB
+Pendrive USB de 15 GB
 └── /srv/backup
     ├── restic
     ├── restore-tests
     └── status
 ```
 
-A mídia USB não hospeda serviços de produção. Ela é dedicada à recuperação.
+O pendrive não hospeda serviços de produção. Ele é dedicado à recuperação.
 
 ## Tecnologia
 
@@ -221,13 +221,13 @@ O script restaura em diretório separado dentro de `/srv/backup/manual-restore/`
 
 ## Limitações
 
-A mídia USB é uma cópia local. Ela não implementa 3-2-1 sozinha e não protege contra roubo, incêndio, surto elétrico que atinja ambos os equipamentos ou falha física simultânea.
+O pendrive é uma cópia local. Ele não implementa 3-2-1 sozinho e não protege contra roubo, incêndio, surto elétrico que atinja ambos os equipamentos ou falha física simultânea.
 
 Evoluções possíveis:
 
 - **cópia no servidor Lenovo (`192.168.15.3`, ~180 GB livres)** — planejada como próxima etapa: `restic copy` para um segundo repositório (rest-server ou SFTP) depois de cada backup local, fechando o 3-2-1 com duas máquinas;
 - cópia criptografada externa/off-site (fora da residência);
-- segunda mídia USB rotacionada.
+- segundo pendrive rotacionado.
 
 ## Visualização e restore assistido
 

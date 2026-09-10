@@ -48,13 +48,13 @@ O SATA Flash antigo deve ser preservado temporariamente como rollback físico.
 
 A mídia operacional atual é um **pendrive USB de 15 GB**, montado em `/srv/backup` (substituiu o de 128 GB por necessidade).
 
-Um HD externo de maior capacidade pode ser usado futuramente como:
+Evoluções possíveis:
 
-- segunda cópia local;
-- substituição do pendrive;
-- mídia offline rotacionada.
+- cópia off-site no servidor Lenovo (`192.168.15.3`) — planejada, fecha o 3-2-1;
+- segundo pendrive rotacionado como mídia offline;
+- substituição por um pendrive maior, se o repositório crescer.
 
-A capacidade atual do Restic é pequena em relação ao espaço disponível, então não existe necessidade imediata de migrar o backup.
+A capacidade atual do Restic (~500 MB) é pequena em relação ao pendrive de 15 GB, então não existe necessidade imediata de migrar o backup.
 
 ## Prioridade 2 — memória
 
