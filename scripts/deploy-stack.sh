@@ -15,4 +15,9 @@ docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config >/dev/null
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
 
+# O Caddyfile é bind mount de arquivo único; após um git pull que o altere, o
+# container não recarrega sozinho (o inode antigo continua montado). Um restart
+# barato garante que o Caddy sempre sirva a versão atual.
+docker restart caddy >/dev/null 2>&1 || true
+
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps

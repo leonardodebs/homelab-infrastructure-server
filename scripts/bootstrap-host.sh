@@ -8,13 +8,15 @@ fi
 
 apt update
 apt full-upgrade -y
-apt install -y ca-certificates curl wget git nano vim htop btop jq unzip tree dnsutils net-tools ufw smartmontools unattended-upgrades unbound unbound-anchor dns-root-data
+apt install -y ca-certificates curl wget git nano vim htop btop jq unzip tree \
+  dnsutils net-tools ufw smartmontools apache2-utils unattended-upgrades \
+  unbound unbound-anchor dns-root-data
 
 timedatectl set-timezone America/Sao_Paulo
 hostnamectl set-hostname homelab
 
-mkdir -p /opt/homelab/{compose,data,backups,scripts}
-chown -R "${SUDO_USER:-root}":"${SUDO_USER:-root}" /opt/homelab
+# A stack Compose roda direto do clone em ~/homelab-infrastructure-server;
+# não há diretório operacional em /opt.
 
 mkdir -p /etc/systemd/journald.conf.d
 cat >/etc/systemd/journald.conf.d/size.conf <<'EOF'

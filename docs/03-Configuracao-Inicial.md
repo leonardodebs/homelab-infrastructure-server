@@ -231,7 +231,7 @@ O repositório operacional fica em:
 /home/leonardo/homelab-infrastructure-server
 ```
 
-Diretórios auxiliares em `/opt/homelab` podem existir, mas a stack Compose atual é executada diretamente a partir do clone do GitHub.
+A stack Compose é executada diretamente a partir do clone do GitHub; não há diretório operacional em `/opt`.
 
 ## 9. Validação
 

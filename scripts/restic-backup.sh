@@ -49,6 +49,10 @@ restart_containers() {
 trap restart_containers EXIT INT TERM
 
 if systemctl is-active --quiet docker; then
+  # Caddy e Backrest ficam de fora de propósito: pausar o Caddy derrubaria todo o
+  # HTTPS na janela das 03:15, e seus arquivos (CA + certs, escrita rara e
+  # atômica) toleram um snapshot crash-consistent. O Backrest não tem estado
+  # relevante para backup.
   for container in \
     adguardhome \
     portainer \

@@ -116,7 +116,7 @@ ufw status verbose
 ok "UFW ativado."
 
 log "Sockets importantes atualmente em escuta"
-ss -lntup | grep -E '(:22|:53|:67|:80|:3000|:3001|:8080|:9443|:5335)\b' || true
+ss -lntup | grep -E '(:22|:53|:67|:80|:443|:3000|:3001|:8080|:8443|:9443|:9899|:5335)\b' || true
 
 cat <<'EOT'
 
@@ -128,22 +128,26 @@ Abra um novo terminal no notebook e teste:
 
   Test-NetConnection 192.168.15.2 -Port 22
   Test-NetConnection 192.168.15.2 -Port 80
+  Test-NetConnection 192.168.15.2 -Port 443
   Test-NetConnection 192.168.15.2 -Port 3000
   Test-NetConnection 192.168.15.2 -Port 3001
   Test-NetConnection 192.168.15.2 -Port 8080
+  Test-NetConnection 192.168.15.2 -Port 8443
   Test-NetConnection 192.168.15.2 -Port 9443
-  Test-NetConnection 192.168.15.2 -Port 443
+  Test-NetConnection 192.168.15.2 -Port 9899
 
-Portal HomeLab:
-  http://192.168.15.2:8080
+Portais (HTTPS via Caddy, exceto a porta 80 do AdGuard que é HTTP puro):
+  https://192.168.15.2:8080   (HomeLab Web)
+  https://192.168.15.2:3000   (ntopng)
+  https://192.168.15.2:9443   (Portainer)
+  https://192.168.15.2:9899   (Backrest)
+  http://192.168.15.2         (AdGuard, porta 80) / https://192.168.15.2:8443
 
-ntopng:
-  http://192.168.15.2:3000
-
-Valide também nova conexão SSH, DNS e DHCP conforme docs/11-UFW.md.
+Valide também nova conexão SSH, DNS e DHCP conforme docs/12-UFW.md.
 
 Observações:
-- A porta 3000 é usada pelo ntopng e deve permanecer restrita à LAN.
+- As portas 80/3000/3001/8080/9443 continuam liberadas mas quem responde é o Caddy.
+- 8443 (AdGuard HTTPS) e 9899 (Backrest) são portas novas do Caddy.
 - UDP/67 é somente DHCPv4.
 - O Unbound 5335 permanece em 127.0.0.1.
 ============================================================

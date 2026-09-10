@@ -13,7 +13,10 @@ fail() {
 [[ $EUID -eq 0 ]] || fail "Execute com sudo."
 mountpoint -q "$MOUNT_POINT" || fail "$MOUNT_POINT não está montado. Execute prepare-backup-disk.sh primeiro."
 
-FSTYPE="$(findmnt -n -o FSTYPE "$MOUNT_POINT")"
+# O pendrive é montado com x-systemd.automount, então "findmnt -o FSTYPE" pode
+# devolver duas linhas ("autofs" do gatilho + "ext4" do filesystem real).
+# "df --output=fstype" resolve o filesystem efetivamente montado.
+FSTYPE="$(df --output=fstype "$MOUNT_POINT" | tail -n1 | tr -d ' ')"
 [[ "$FSTYPE" == "ext4" ]] || fail "Sistema de arquivos inesperado em $MOUNT_POINT: $FSTYPE. O projeto foi desenhado para ext4."
 
 export DEBIAN_FRONTEND=noninteractive

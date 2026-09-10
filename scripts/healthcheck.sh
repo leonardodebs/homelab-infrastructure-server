@@ -13,16 +13,27 @@ df -h /
 echo '== Serviços nativos =='
 systemctl is-active docker
 systemctl is-active unbound
+systemctl is-active ntopng
 
 echo '== Containers =='
 docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 
 echo '== Portas importantes =='
-sudo ss -lntup | grep -E '(:22|:53|:67|:80|:3001|:5335|:8080|:9443)\b' || true
+# públicas (Caddy) + internas reais + serviços de base
+sudo ss -lntup | grep -E '(:22|:53|:67|:80|:443|:3000|:3001|:5335|:8080|:8280|:8443|:9443|:9444|:9899|:3300|:3101|:8180)\b' || true
+
+echo '== Caddy (TLS local) =='
+docker exec caddy caddy validate --config /etc/caddy/Caddyfile 2>&1 | tail -1 || true
+curl -sk -o /dev/null -w 'portainer.home.arpa -> HTTP %{http_code}\n' \
+  --resolve portainer.home.arpa:443:"$SERVER_IP" https://portainer.home.arpa/ || true
 
 echo '== DNS =='
 dig +short @127.0.0.1 -p 5335 ubuntu.com
 dig +short @"$SERVER_IP" ubuntu.com
+for h in adguard portainer kuma web ntop backrest; do
+  printf '%s.home.arpa -> ' "$h"
+  dig +short @"$SERVER_IP" "$h.home.arpa"
+done
 
 echo '== Gateway =='
 ping -c 2 192.168.15.1
