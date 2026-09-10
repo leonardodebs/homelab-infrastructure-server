@@ -23,7 +23,11 @@ echo '== Portas importantes =='
 sudo ss -lntup | grep -E '(:22|:53|:67|:80|:443|:3000|:3001|:5335|:8080|:8280|:8443|:9443|:9444|:9899|:3300|:3101|:8180)\b' || true
 
 echo '== Caddy (TLS local) =='
-docker exec caddy caddy validate --config /etc/caddy/Caddyfile 2>&1 | tail -1 || true
+if docker exec caddy caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1; then
+  echo 'Caddyfile: válido'
+else
+  echo 'Caddyfile: INVÁLIDO — ver docker logs caddy'
+fi
 curl -sk -o /dev/null -w 'portainer.home.arpa -> HTTP %{http_code}\n' \
   --resolve portainer.home.arpa:443:"$SERVER_IP" https://portainer.home.arpa/ || true
 
@@ -42,15 +46,19 @@ echo '== Rede Docker =='
 docker network inspect homelab_default \
   --format '{{range .IPAM.Config}}Subnet={{.Subnet}} Gateway={{.Gateway}}{{end}}' 2>/dev/null || true
 
-echo '== Backup externo =='
+echo '== Backup no pendrive =='
 if mountpoint -q "$BACKUP_MOUNT"; then
   findmnt "$BACKUP_MOUNT"
   df -h "$BACKUP_MOUNT"
-  if [[ -r "$BACKUP_MOUNT/status/last-success.txt" ]]; then
+  # o marcador é root-only; use sudo se disponível sem senha
+  if sudo -n test -r "$BACKUP_MOUNT/status/last-success.txt" 2>/dev/null; then
+    echo '-- Último backup bem-sucedido --'
+    sudo -n cat "$BACKUP_MOUNT/status/last-success.txt"
+  elif [[ -r "$BACKUP_MOUNT/status/last-success.txt" ]]; then
     echo '-- Último backup bem-sucedido --'
     cat "$BACKUP_MOUNT/status/last-success.txt"
   else
-    echo 'Ainda não há marcador de backup bem-sucedido.'
+    echo 'Marcador de backup não legível (rode com sudo para ver last-success.txt).'
   fi
 else
   echo "ALERTA: $BACKUP_MOUNT não está montado."
