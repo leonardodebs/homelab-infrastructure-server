@@ -29,7 +29,7 @@ Centralizar serviços essenciais da rede doméstica no HomeLab:
 | Backup | pendrive USB 15 GB em ext4, montado em `/srv/backup` |
 | Rede principal | TP-Link UE300 USB 3.0 Gigabit Ethernet |
 | Sistema | Ubuntu Server 24.04.4 LTS |
-| Hostname | `homelab` |
+| Hostname | `sentinel` (renomeado de `homelab` em 17/09/2026) |
 | Rede | `192.168.15.0/24` |
 | Gateway | `192.168.15.1` |
 | HomeLab | `192.168.15.2` |
@@ -60,7 +60,7 @@ O certificado confiável exige a CA local do Caddy instalada no dispositivo clie
 ```mermaid
 flowchart TD
     Internet --> Huawei[Huawei HG8145V5-V2\n192.168.15.1\nGateway + NAT + Wi-Fi]
-    Huawei --> Wyse[Dell Wyse\nhomelab\n192.168.15.2]
+    Huawei --> Wyse[Dell Wyse\nsentinel\n192.168.15.2]
     Huawei --> Clientes[Notebooks, celulares, TVs]
     Clientes -->|DHCP + DNS| AGH[AdGuard Home\nDNS 53]
     AGH --> Unbound[Unbound\n127.0.0.1:5335]
@@ -190,6 +190,8 @@ Já foram validados snapshot inicial, snapshot automático pelo systemd, `restic
 - [x] migração da rede `192.168.100.x` → `192.168.15.x` versionada
 - [x] Diun com notificação por e-mail (Gmail SMTP)
 - [x] Backrest (visualizador do Restic) atrás do Caddy
+- [x] hostname renomeado `homelab` → `sentinel`; `--host` do Restic fixado (independente do hostname do SO) para não fragmentar o histórico de novo
+- [x] `-m` (local-networks) do ntopng corrigido para `192.168.15.0/24` — estava com a faixa antiga e classificava tráfego local como Internet, gerando números de "top talkers" completamente falsos no Grafana
 - [ ] cópia off-site do Restic no Lenovo (`192.168.15.3`) — fecha o 3-2-1
 - [ ] burn-in de estabilidade por 48–72 horas
 - [ ] evidências/capturas para portfólio

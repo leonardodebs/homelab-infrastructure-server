@@ -17,7 +17,7 @@ Transformar o Dell Wyse em servidor de infraestrutura doméstica de baixo consum
 ### Dell Wyse N03D / 3290
 
 - Ubuntu Server 24.04.4 LTS;
-- hostname `homelab`;
+- hostname `sentinel` (renomeado de `homelab` em 17/09/2026 — o projeto e os nomes dos containers/volumes continuam usando o prefixo `homelab`, é só o hostname do SO que mudou);
 - IP estático `192.168.15.2`;
 - Ethernet principal via adaptador USB TP-Link UE300;
 - Docker Engine e Compose;
@@ -39,7 +39,7 @@ Transformar o Dell Wyse em servidor de infraestrutura doméstica de baixo consum
 ```mermaid
 flowchart TD
     Internet --> Huawei[Huawei HG8145V5-V2\n192.168.15.1\nNAT + Wi-Fi\nDHCP desativado]
-    Huawei --> Wyse[Dell Wyse\nhomelab\n192.168.15.2\nUbuntu Server]
+    Huawei --> Wyse[Dell Wyse\nsentinel\n192.168.15.2\nUbuntu Server]
     Huawei --> Clientes[Notebooks, celulares, TVs e demais clientes]
     Clientes -->|DHCP + DNS| AdGuard[AdGuard Home\nDNS :53 + DHCPv4 :67]
     AdGuard -->|127.0.0.1:5335| Unbound[Unbound\nDNS recursivo + cache]

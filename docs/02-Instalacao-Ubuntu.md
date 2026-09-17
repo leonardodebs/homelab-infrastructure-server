@@ -33,7 +33,7 @@ Durante uma reinstalação, mantenha qualquer mídia de backup **desconectada** 
 7. Deixe proxy em branco e mirror no padrão, salvo necessidade específica.
 8. Selecione somente o **SATA Flash interno de 32 GB**.
 9. Confirme a remoção das partições existentes somente depois de revisar o disco selecionado.
-10. Hostname: `homelab`.
+10. Hostname: `sentinel` (renomeado de `homelab` em 17/09/2026; o nome do projeto e dos containers continua `homelab`, é só o hostname do SO).
 11. Usuário administrativo: `leonardo`.
 12. Instale `OpenSSH server`.
 13. Não instale snaps adicionais sem necessidade.
@@ -110,7 +110,7 @@ O mesmo disco armazena Ubuntu, pacotes, imagens Docker e volumes ativos; por iss
 
 - [x] Ubuntu Server 24.04.4 LTS inicializa pelo SATA Flash interno;
 - [x] Windows removido;
-- [x] hostname `homelab`;
+- [x] hostname `sentinel`;
 - [x] SSH acessível;
 - [x] timezone `America/Sao_Paulo`;
 - [x] sistema atualizado durante a implantação;

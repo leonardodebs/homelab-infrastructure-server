@@ -13,7 +13,7 @@ apt install -y ca-certificates curl wget git nano vim htop btop jq unzip tree \
   unbound unbound-anchor dns-root-data
 
 timedatectl set-timezone America/Sao_Paulo
-hostnamectl set-hostname homelab
+hostnamectl set-hostname sentinel
 
 # A stack Compose roda direto do clone em ~/homelab-infrastructure-server;
 # não há diretório operacional em /opt.
@@ -32,4 +32,4 @@ ufw default allow outgoing
 ufw allow from 192.168.15.0/24 to any port 22 proto tcp comment 'SSH LAN'
 ufw --force enable
 
-echo "Bootstrap concluído para o host homelab. Configure o IP estático antes de continuar."
+echo "Bootstrap concluído para o host sentinel. Configure o IP estático antes de continuar."

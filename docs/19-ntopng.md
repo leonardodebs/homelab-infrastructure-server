@@ -11,9 +11,25 @@ O `ntopng` foi implantado para acrescentar visibilidade de tráfego de rede ao H
 - interface web disponível somente na LAN;
 - porta TCP `3000` liberada no UFW para a rede `192.168.15.0/24`;
 - monitoramento associado à interface Ethernet principal do HomeLab;
-- rede local `192.168.15.0/24` reconhecida como rede interna;
+- rede local `192.168.15.0/24` reconhecida como rede interna via `-m=` em `/etc/ntopng/ntopng.conf` (corrigido em 17/09/2026 — ver incidente abaixo);
 - dashboard validado e operacional;
 - desde o [capítulo 20](20-Caddy-TLS-Local.md), a porta pública `3000` é servida com TLS confiável pelo Caddy; o ntopng em si migrou seu `--http-port` (`-w=` em `/etc/ntopng/ntopng.conf`) para `3300`.
+
+### Incidente: "top talkers" absurdos no Grafana (17/09/2026)
+
+O `-m` (local-networks) do ntopng ficou com a faixa **antiga** (`192.168.100.0/24`) depois da migração de rede para `192.168.15.0/24` — esse arquivo é config nativa, fora do repositório Git, e escapou de todas as buscas por IP feitas na época. Com o `-m` errado, o ntopng deixou de reconhecer qualquer tráfego como "local" e passou a classificar tráfego normal (LAN, entre containers) como se fosse tráfego de/para a Internet, inflando artificialmente os números de "bytes enviados" no painel `Rede - Top talkers` do Grafana (chegou a mostrar >1 TiB enviados em 24h pelo Dell, quando os contadores reais da interface mostravam poucos GB desde o boot).
+
+Diagnóstico: comparar o total real da interface (`ip -s link show lan0` ou `cat /sys/class/net/lan0/statistics/tx_bytes`) com o número do painel — se o painel mostra ordens de magnitude a mais que o contador real, é sinal de classificação errada, não de tráfego real.
+
+Correção:
+
+```bash
+sudo sed -i 's/^-m=192\.168\.100\.0\/24/-m=192.168.15.0\/24/' /etc/ntopng/ntopng.conf
+sudo systemctl restart ntopng
+grep '^-m=' /etc/ntopng/ntopng.conf
+```
+
+Qualquer futura mudança de faixa de IP deve incluir a checagem de `-m=` em `/etc/ntopng/ntopng.conf` explicitamente — é o único lugar do projeto onde o IP local vive fora do Git.
 
 Acesso administrativo:
 

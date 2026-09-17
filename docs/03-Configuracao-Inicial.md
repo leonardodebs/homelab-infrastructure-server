@@ -5,7 +5,7 @@
 O servidor opera com:
 
 ```text
-Hostname : homelab
+Hostname : sentinel (renomeado de homelab em 17/09/2026)
 IP       : 192.168.15.2/24
 Gateway  : 192.168.15.1
 Rede     : 192.168.15.0/24
@@ -86,15 +86,17 @@ ping -c 3 1.1.1.1
 ## 4. Hostname
 
 ```bash
-sudo hostnamectl set-hostname homelab
+sudo hostnamectl set-hostname sentinel
 hostnamectl
 ```
 
 Em `/etc/hosts`, mantenha a referência local coerente:
 
 ```text
-127.0.1.1 homelab
+127.0.1.1 sentinel
 ```
+
+O hostname do SO é independente do nome do projeto (`homelab`) e dos nomes dos containers/volumes (prefixo `homelab_*`) — trocar um não exige trocar o outro. O `--host` usado pelo Restic também é fixo em `homelab` por esse mesmo motivo (ver [docs/13-Backup.md](13-Backup.md)), então renomear o host de novo no futuro não vai fragmentar o histórico de backup.
 
 ## 5. Hardening SSH — concluído
 
@@ -245,7 +247,7 @@ ss -lntup
 
 Estado atual:
 
-- [x] hostname `homelab`;
+- [x] hostname `sentinel`;
 - [x] IP `192.168.15.2` persistente;
 - [x] gateway `192.168.15.1`;
 - [x] SSH funcional na LAN;

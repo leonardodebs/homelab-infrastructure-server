@@ -215,6 +215,22 @@ sudo apt clean
 
 Não use `docker system prune --volumes`.
 
+## Grafana/ntopng mostra tráfego absurdo ("top talkers")
+
+Antes de investigar como incidente de segurança, compare com o contador real da interface:
+
+```bash
+ip -s link show lan0
+R1=$(cat /sys/class/net/lan0/statistics/rx_bytes); T1=$(cat /sys/class/net/lan0/statistics/tx_bytes)
+sleep 5
+R2=$(cat /sys/class/net/lan0/statistics/rx_bytes); T2=$(cat /sys/class/net/lan0/statistics/tx_bytes)
+echo "RX: $(( (R2-R1)/5 )) B/s   TX: $(( (T2-T1)/5 )) B/s"
+```
+
+Se o painel mostra ordens de magnitude a mais que o total acumulado desde o boot (ou que a taxa medida ao vivo), é classificação errada no ntopng, não tráfego real. Suspeite primeiro do `-m=` (local-networks) em `/etc/ntopng/ntopng.conf` — se estiver com uma faixa de IP diferente da LAN atual, todo tráfego local passa a ser contado como "Internet". Caso real e documentado: [docs/19-ntopng.md](19-ntopng.md#incidente-top-talkers-absurdos-no-grafana-17092026).
+
+Também vale conferir `docker stats --no-stream` (rede por container) e `ss -tn state established` para descartar qualquer processo real fazendo upload fora do padrão.
+
 ## Rede perdida após Netplan
 
 Use console HDMI/teclado e restaure o backup real do YAML:
