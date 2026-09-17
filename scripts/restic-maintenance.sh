@@ -26,7 +26,7 @@ mountpoint -q "$BACKUP_MOUNT" || fail "$BACKUP_MOUNT não está montado."
 exec 9>"$LOCK_FILE"
 flock -n 9 || fail "Outra operação Restic está em execução."
 
-HOST_TAG="$(hostname --short)"
+HOST_TAG="${RESTIC_HOST_TAG:-homelab}"
 
 echo "Aplicando retenção e liberando espaço não referenciado..."
 nice -n 15 ionice -c2 -n7 restic forget \

@@ -116,7 +116,12 @@ done
 
 ((${#VALID_SOURCES[@]} > 0)) || fail "Nenhuma origem válida foi encontrada."
 
-HOST_TAG="$(hostname --short)"
+# Identidade de backup fixa, independente do hostname real do host (que já
+# mudou uma vez: homelab -> sentinel). Usar "hostname --short" aqui faria o
+# "restic forget"/"--group-by host,tags" parar de enxergar o histórico antigo
+# a cada renomeação do servidor. Sobrescrevível via RESTIC_HOST_TAG no
+# restic.env, se um dia for realmente necessário.
+HOST_TAG="${RESTIC_HOST_TAG:-homelab}"
 STARTED_AT="$(date --iso-8601=seconds)"
 
 echo "Iniciando backup Restic em $STARTED_AT"

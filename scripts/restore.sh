@@ -25,7 +25,7 @@ set +a
 
 mountpoint -q "$BACKUP_MOUNT" || fail "$BACKUP_MOUNT não está montado."
 
-HOST_TAG="$(hostname --short)"
+HOST_TAG="${RESTIC_HOST_TAG:-homelab}"
 echo "Snapshot: $SNAPSHOT"
 echo "Destino:  $TARGET"
 echo "A restauração será feita em uma pasta separada e não substituirá os dados ativos."

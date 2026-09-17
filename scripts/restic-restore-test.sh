@@ -30,7 +30,7 @@ STAMP="$(date +%Y%m%d-%H%M%S)"
 TARGET="$BACKUP_MOUNT/restore-tests/$STAMP"
 mkdir -p "$TARGET"
 
-HOST_TAG="$(hostname --short)"
+HOST_TAG="${RESTIC_HOST_TAG:-homelab}"
 echo "Restaurando o snapshot mais recente em $TARGET"
 restic restore latest --host "$HOST_TAG" --tag homelab --target "$TARGET"
 
