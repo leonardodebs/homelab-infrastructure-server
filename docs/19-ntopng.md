@@ -31,6 +31,29 @@ grep '^-m=' /etc/ntopng/ntopng.conf
 
 Qualquer futura mudança de faixa de IP deve incluir a checagem de `-m=` em `/etc/ntopng/ntopng.conf` explicitamente — é o único lugar do projeto onde o IP local vive fora do Git.
 
+### Incidente: erros 403 do ntopng ao exportar para o InfluxDB (17/09/2026)
+
+Durante a investigação do incidente anterior, os logs do ntopng (`journalctl -u ntopng`) mostraram erros repetidos de `403` ao tentar gravar métricas no InfluxDB (`monitoring_influxdb_data`, container `influxdb` no Lenovo `192.168.15.3`).
+
+Causa: o usuário `ntopng` no InfluxDB tinha apenas permissão de leitura/escrita no banco `ntopng` (`GRANT ... ON ntopng`), mas a exportação do ntopng também precisa gerenciar retention policies/continuous queries e ler o banco interno `_internal` — operações que exigem privilégio de administrador do cluster InfluxDB (não apenas acesso ao banco).
+
+Diagnóstico:
+
+```bash
+docker exec influxdb influx -username admin -password '<senha>' -execute 'SHOW USERS'
+# usuário "ntopng" aparecia com admin=false
+```
+
+Correção (executada no Lenovo, fora deste repositório — é estado do InfluxDB, não arquivo versionado):
+
+```bash
+docker exec influxdb influx -username admin -password '<senha>' -execute 'GRANT ALL PRIVILEGES TO "ntopng"'
+```
+
+Validação: `SHOW USERS` passou a mostrar `ntopng true`; após `systemctl restart ntopng` no Dell, os logs pararam de mostrar erros `403` e o InfluxDB passou a receber as measurements (`host:packets`, `host:active_flows`, etc.) normalmente.
+
+Nota de segurança: como parte da revisão desse incidente, as senhas do InfluxDB usadas nos comandos de diagnóstico foram consideradas expostas (apareceram em texto puro na sessão) e a senha do usuário `admin` deve ser rotacionada — ver `docker/monitoring/.env` no repositório `homelab-automation-server` (Lenovo).
+
 Acesso administrativo:
 
 ```text
