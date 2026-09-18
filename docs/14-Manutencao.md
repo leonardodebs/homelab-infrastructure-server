@@ -242,14 +242,16 @@ Mantenha preferencialmente mais de 20% livre no armazenamento interno.
 Listar snapshots:
 
 ```bash
-sudo bash -c 'source /etc/homelab-backup/restic.env; restic snapshots'
+sudo bash -c 'set -a; source /etc/homelab-backup/restic.env; set +a; restic snapshots'
 ```
 
 Verificação de integridade:
 
 ```bash
-sudo bash -c 'source /etc/homelab-backup/restic.env; restic check'
+sudo bash -c 'set -a; source /etc/homelab-backup/restic.env; set +a; restic check'
 ```
+
+`source` sozinho não exporta as variáveis para o processo filho `restic` — sem `set -a`/`set +a`, o comando falha com `Please specify repository location`.
 
 O restore test mensal é automatizado, mas pode ser disparado manualmente:
 

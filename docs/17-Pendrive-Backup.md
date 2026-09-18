@@ -199,7 +199,7 @@ O Restic reportou 604 objetos de filesystem no snapshot, incluindo diretórios.
 ### Integridade
 
 ```bash
-sudo bash -c 'source /etc/homelab-backup/restic.env; restic check'
+sudo bash -c 'set -a; source /etc/homelab-backup/restic.env; set +a; restic check'
 ```
 
 Resultado:

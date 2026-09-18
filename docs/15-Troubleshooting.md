@@ -181,9 +181,11 @@ sudo dmesg -T | grep -Ei 'usb|uas|reset|I/O error|buffer I/O|sd[a-z]'
 ## Restic com erro
 
 ```bash
-sudo bash -c 'source /etc/homelab-backup/restic.env; restic snapshots'
-sudo bash -c 'source /etc/homelab-backup/restic.env; restic check'
+sudo bash -c 'set -a; source /etc/homelab-backup/restic.env; set +a; restic snapshots'
+sudo bash -c 'set -a; source /etc/homelab-backup/restic.env; set +a; restic check'
 ```
+
+`source` sozinho não exporta as variáveis para o processo filho `restic` — sem `set -a`/`set +a`, o comando falha com `Please specify repository location`.
 
 Nunca apague manualmente arquivos dentro de `/srv/backup/restic`.
 

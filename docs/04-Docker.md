@@ -100,6 +100,8 @@ docker compose --env-file compose/.env -f compose/compose.yaml pull SERVICO
 docker compose --env-file compose/.env -f compose/compose.yaml up -d SERVICO
 ```
 
+Para subir/redesplegar a stack inteira de uma vez (cria `compose/.env` a partir do `.example` se faltar, valida, faz `pull` + `up -d` e já reinicia o Caddy por causa do bind mount de arquivo único), use `scripts/deploy-stack.sh`. Para atualizar preservando backup automático antes, use `scripts/update-stack.sh` (ver `docs/14-Manutencao.md`).
+
 ## Persistência
 
 Volumes nomeados atuais:

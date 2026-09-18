@@ -187,8 +187,10 @@ sudo journalctl -u homelab-restore-test.service --no-pager -n 100
 Listar snapshots:
 
 ```bash
-sudo bash -c 'source /etc/homelab-backup/restic.env; restic snapshots'
+sudo bash -c 'set -a; source /etc/homelab-backup/restic.env; set +a; restic snapshots'
 ```
+
+`source` sozinho não exporta as variáveis para o processo filho `restic` — sem `set -a`/`set +a`, o comando falha com `Please specify repository location`.
 
 ## Validação dos timers
 
